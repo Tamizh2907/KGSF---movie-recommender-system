@@ -27,7 +27,7 @@ import numpy as np
 from tqdm import tqdm
 from math import exp
 import os
-os.environ['CUDA_VISIBLE_DEVICES']='3'
+#os.environ['CUDA_VISIBLE_DEVICES']='3'
 import signal
 import json
 import argparse
@@ -45,6 +45,8 @@ except ImportError:
     TORCH_AVAILABLE = False
 from nltk.translate.bleu_score import sentence_bleu
 
+torch.cuda.empty_cache()
+
 def is_distributed():
     """
     Returns True if we are in distributed mode.
@@ -55,7 +57,7 @@ def setup_args():
     train = argparse.ArgumentParser()
     train.add_argument("-max_c_length","--max_c_length",type=int,default=256)
     train.add_argument("-max_r_length","--max_r_length",type=int,default=30)
-    train.add_argument("-batch_size","--batch_size",type=int,default=32)
+    train.add_argument("-batch_size","--batch_size",type=int,default=4)
     train.add_argument("-max_count","--max_count",type=int,default=5)
     train.add_argument("-use_cuda","--use_cuda",type=bool,default=True)
     train.add_argument("-load_dict","--load_dict",type=str,default=None)
@@ -64,7 +66,7 @@ def setup_args():
     train.add_argument("-momentum","--momentum",type=float,default=0)
     train.add_argument("-is_finetune","--is_finetune",type=bool,default=False)
     train.add_argument("-embedding_type","--embedding_type",type=str,default='random')
-    train.add_argument("-epoch","--epoch",type=int,default=3)
+    train.add_argument("-epoch","--epoch",type=int,default=1)
     train.add_argument("-gpu","--gpu",type=str,default='0,1')
     train.add_argument("-gradient_clip","--gradient_clip",type=float,default=0.1)
     train.add_argument("-embedding_size","--embedding_size",type=int,default=300)
@@ -141,7 +143,7 @@ class TrainLoop_fusion_rec():
         if self.opt['embedding_type'] != 'random':
             pass
         if self.use_cuda:
-            self.model.cpu()
+            self.model.cuda()
 
     def train(self):
         #self.model.load_model()
@@ -163,8 +165,8 @@ class TrainLoop_fusion_rec():
                 self.model.train()
                 self.zero_grad()
 
-                scores, preds, rec_scores, rec_loss, gen_loss, mask_loss, info_db_loss, _=self.model(context.cpu(), response.cpu(), mask_response.cpu(),
-                                                                                                                            concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cpu(), rec, test=False)
+                scores, preds, rec_scores, rec_loss, gen_loss, mask_loss, info_db_loss, _=self.model(context.cuda(), response.cuda(), mask_response.cuda(),
+                                                                                                                            concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cuda(), rec, test=False)
 
                 joint_loss=info_db_loss#+info_con_loss
 
@@ -195,7 +197,7 @@ class TrainLoop_fusion_rec():
                 self.model.train()
                 self.zero_grad()
 
-                scores, preds, rec_scores, rec_loss, gen_loss, mask_loss, info_db_loss, _=self.model(context.cpu(), response.cpu(), mask_response.cpu(), concept_mask, dbpedia_mask, seed_sets, movie,concept_vec, db_vec, entity_vector.cpu(), rec, test=False)
+                scores, preds, rec_scores, rec_loss, gen_loss, mask_loss, info_db_loss, _=self.model(context.cuda(), response.cuda(), mask_response.cuda(), concept_mask, dbpedia_mask, seed_sets, movie,concept_vec, db_vec, entity_vector.cuda(), rec, test=False)
 
                 joint_loss=rec_loss+0.025*info_db_loss#+0.0*info_con_loss#+mask_loss*0.05
 
@@ -225,7 +227,7 @@ class TrainLoop_fusion_rec():
     def metrics_cal_rec(self,rec_loss,scores,labels):
         batch_size = len(labels.view(-1).tolist())
         self.metrics_rec["loss"] += rec_loss
-        outputs = scores.cpu()
+        outputs = scores.cuda()
         outputs = outputs[:, torch.LongTensor(self.movie_ids)]
         _, pred_idx = torch.topk(outputs, k=100, dim=1)
         for b in range(batch_size):
@@ -257,9 +259,9 @@ class TrainLoop_fusion_rec():
                 for b in range(batch_size):
                     seed_set = entity[b].nonzero().view(-1).tolist()
                     seed_sets.append(seed_set)
-                scores, preds, rec_scores, rec_loss, _, mask_loss, info_db_loss, info_con_loss = self.model(context.cpu(), response.cpu(), mask_response.cpu(), concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cpu(), rec, test=True, maxlen=20, bsz=batch_size)
+                scores, preds, rec_scores, rec_loss, _, mask_loss, info_db_loss, info_con_loss = self.model(context.cuda(), response.cuda(), mask_response.cuda(), concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cuda(), rec, test=True, maxlen=20, bsz=batch_size)
 
-            recs.extend(rec.cpu())
+            recs.extend(rec.cuda())
             #print(losses)
             #exit()
             self.metrics_cal_rec(rec_loss, rec_scores, movie)
@@ -411,7 +413,7 @@ class TrainLoop_fusion_gen():
         if self.opt['embedding_type'] != 'random':
             pass
         if self.use_cuda:
-            self.model.cpu()
+            self.model.cuda()
 
     def train(self):
         self.model.load_model()
@@ -433,7 +435,7 @@ class TrainLoop_fusion_gen():
                 self.model.train()
                 self.zero_grad()
 
-                scores, preds, rec_scores, rec_loss, gen_loss, mask_loss, info_db_loss, info_con_loss=self.model(context.cpu(), response.cpu(), mask_response.cpu(), concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cpu(), rec, test=False)
+                scores, preds, rec_scores, rec_loss, gen_loss, mask_loss, info_db_loss, info_con_loss=self.model(context.cuda(), response.cuda(), mask_response.cuda(), concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cuda(), rec, test=False)
 
                 joint_loss=gen_loss
 
@@ -479,13 +481,13 @@ class TrainLoop_fusion_gen():
                 for b in range(batch_size):
                     seed_set = entity[b].nonzero().view(-1).tolist()
                     seed_sets.append(seed_set)
-                _, _, _, _, gen_loss, mask_loss, info_db_loss, info_con_loss = self.model(context.cpu(), response.cpu(), mask_response.cpu(), concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cpu(), rec, test=False)
-                scores, preds, rec_scores, rec_loss, _, mask_loss, info_db_loss, info_con_loss = self.model(context.cpu(), response.cpu(), mask_response.cpu(), concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cpu(), rec, test=True, maxlen=20, bsz=batch_size)
+                _, _, _, _, gen_loss, mask_loss, info_db_loss, info_con_loss = self.model(context.cuda(), response.cuda(), mask_response.cuda(), concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cuda(), rec, test=False)
+                scores, preds, rec_scores, rec_loss, _, mask_loss, info_db_loss, info_con_loss = self.model(context.cuda(), response.cuda(), mask_response.cuda(), concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cuda(), rec, test=True, maxlen=20, bsz=batch_size)
 
-            golden_sum.extend(self.vector2sentence(response.cpu()))
-            inference_sum.extend(self.vector2sentence(preds.cpu()))
-            context_sum.extend(self.vector2sentence(context.cpu()))
-            recs.extend(rec.cpu())
+            golden_sum.extend(self.vector2sentence(response.cuda()))
+            inference_sum.extend(self.vector2sentence(preds.cuda()))
+            context_sum.extend(self.vector2sentence(context.cuda()))
+            recs.extend(rec.cuda())
             losses.append(torch.mean(gen_loss))
             #print(losses)
             #exit()
