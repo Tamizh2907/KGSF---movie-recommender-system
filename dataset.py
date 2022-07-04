@@ -26,7 +26,7 @@ from tqdm import tqdm
 #exit()
 
 class dataset(object):
-    def __init__(self,filename,opt):
+    def __init__(self,filename):
         self.entity2entityId=pkl.load(open('data/entity2entityId.pkl','rb'))
         self.entity_max=len(self.entity2entityId)
 
@@ -49,7 +49,7 @@ class dataset(object):
 
         with open('inspired/kg.pkl', 'rb') as f:
             kg = pkl.load(f)
-        self.subkg = self._extract_subkg(kg, self.item, 2)
+        self.subkg = self.extract_subkg(kg, self.item, 2)
         self.entity2id, self.relation2id, self.subkg = self.kg2id(self.subkg)
 
         with open('inspired/dbpedia_subkg.json', 'w', encoding='utf-8') as f:
@@ -61,9 +61,11 @@ class dataset(object):
 
         with open('inspired/entity2id.json', encoding='utf-8') as f:
             self.entity2id = json.load(f)
+        
 
+        length = len(filename)
         self.src_file = filename
-        self.tgt_file = filename + '_data_dbpedia.jsonl'
+        self.tgt_file = filename[:length - 6] + '_data_dbpedia.jsonl'
         self.remove(self.src_file, self.tgt_file)
 
         self.item_set = set()
@@ -71,36 +73,45 @@ class dataset(object):
         #self.process('test_data_dbpedia.jsonl', 'test_data_processed.jsonl', item_set)
         #self.process('valid_data_dbpedia.jsonl', 'valid_data_processed.jsonl', item_set)
 
-        self.data_file = filename + '_data_dbpedia.jsonl'
-        self.out_file = filename + '_data_processed.jsonl'
+        self.data_file = filename[:length - 6] + '_data_dbpedia.jsonl'
+        self.out_file = filename[:length - 6] + '_data_processed.jsonl'
         self.process(self.data_file, self.out_file, self.item_set)
 
         with open('item_ids.json', 'w', encoding='utf-8') as f:
             json.dump(list(self.item_set), f, ensure_ascii=False)
         print(f'#item: {len(self.item_set)}')
 
-        self.batch_size=opt['batch_size']
-        self.max_c_length=opt['max_c_length']
-        self.max_r_length=opt['max_r_length']
-        self.max_count=opt['max_count']
-        self.entity_num=opt['n_entity']
-        self.word2index=json.load(open('word2index.json',encoding='utf-8'))
+        #self.batch_size=opt['batch_size']
+        #self.max_c_length=opt['max_c_length']
+        #self.max_r_length=opt['max_r_length']
+        #self.max_count=opt['max_count']
+        #self.entity_num=opt['n_entity']
+        #self.word2index=json.load(open('word2index.json',encoding='utf-8'))
 
         #print(type(corpus))
         #print(len(corpus))
         #print(corpus[:5])
         self.data=[]
+        cases=[]
         #self.corpus=[]
-        for line in tqdm(f):
-            lines=json.loads(line.strip())
-            seekerid=lines["initiatorWorkerId"]
-            recommenderid=lines["respondentWorkerId"]
-            contexts=lines['messages']
-            movies=lines['movieMentions']
-            altitude=lines['respondentQuestions']
-            initial_altitude=lines['initiatorQuestions']
-            cases=self._context_reformulate(contexts,movies,altitude,initial_altitude,seekerid,recommenderid)
-            self.data.extend(cases)
+        with open('inspired/' + self.out_file, 'r', encoding='utf-8') as f:
+            for line in tqdm(f):
+                lines=json.loads(line)
+                contexts=lines['contexts']
+                response=lines['response']
+                entity=lines['entity']
+                movie=lines['movie']
+                rec=lines['rec']
+                cases.append({'contexts': contexts, 'response': response, 'entity': entity, 'movie': movie, 'rec': rec})
+                self.data.extend(cases)
+
+          
+            #for values in lines:
+            #    self.data.extend(values)
+
+
+        print(self.data[0])
+
         #print(type(self.corpus))
         #print(len(self.corpus))
         #print(self.corpus[:5])
@@ -252,6 +263,7 @@ class dataset(object):
                         'rec': 1
                     }
                 fout.write(json.dumps(turn, ensure_ascii=False) + '\n')
+
 
     def prepare_word2vec(self):
         corpus = []
@@ -467,7 +479,7 @@ class dataset(object):
                 pass
         return token_text_com,movie_rec_trans
 
-    def _context_reformulate(self,context,movies,altitude,ini_altitude,s_id,re_id):
+    #def _context_reformulate(self,context,movies,altitude,ini_altitude,s_id,re_id):
 
         #last_id=None
         ##perserve the list of dialogue
@@ -529,7 +541,7 @@ class dataset(object):
         #            if word not in entities_set:
         #                entities.append(word)
         #                entities_set.add(word)
-        return cases
+        #return cases
 
 class CRSdataset(Dataset):
     def __init__(self, dataset, entity_num, concept_num):
@@ -570,5 +582,5 @@ class CRSdataset(Dataset):
         return len(self.data)
 
 if __name__=='__main__':
-    ds=dataset('inspired/train.jsonl')
+    ds=dataset('train.jsonl')
     print()
