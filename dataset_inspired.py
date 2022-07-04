@@ -1,0 +1,194 @@
+import json
+from collections import defaultdict
+import pickle as pkl
+from tqdm.auto import tqdm
+import os.path
+from tqdm import tqdm
+from nltk import word_tokenize
+
+
+def get_item_set(file):
+    entity = set()
+    with open('inspired/' + file, 'r', encoding='utf-8') as f:
+        for line in tqdm(f):
+            line = json.loads(line)
+            for turn in line:
+                for e in turn['movie_link']:
+                    entity.add(e)
+    return entity
+
+
+def extract_subkg(kg, seed_set, n_hop):
+    subkg = defaultdict(list)  # {head entity: [(relation, tail entity)]}
+    subkg_hrt = set()  # {(head_entity, relation, tail_entity)}
+
+    ripple_set = None
+    for hop in range(n_hop):
+        memories_h = set()  # [head_entity]
+        memories_r = set()  # [relation]
+        memories_t = set()  # [tail_entity]
+
+        if hop == 0:
+            tails_of_last_hop = seed_set  # [entity]
+        else:
+            tails_of_last_hop = ripple_set[2]  # [tail_entity]
+
+        for entity in tqdm(tails_of_last_hop):
+            for relation_and_tail in kg[entity]:
+                h, r, t = entity, relation_and_tail[0], relation_and_tail[1]
+                if (h, r, t) not in subkg_hrt:
+                    subkg_hrt.add((h, r, t))
+                    subkg[h].append((r, t))
+                memories_h.add(h)
+                memories_r.add(r)
+                memories_t.add(t)
+
+        ripple_set = (memories_h, memories_r, memories_t)
+
+    return subkg
+
+
+def kg2id(kg):
+    entity_set = all_item
+
+    with open('inspired/relation_set.json', encoding='utf-8') as f:
+        relation_set = json.load(f)
+
+    for head, relation_tails in tqdm(kg.items()):
+        for relation_tail in relation_tails:
+            if relation_tail[0] in relation_set:
+                entity_set.add(head)
+                entity_set.add(relation_tail[1])
+
+    entity2id = {e: i for i, e in enumerate(entity_set)}
+    print(f"# entity: {len(entity2id)}")
+    relation2id = {r: i for i, r in enumerate(relation_set)}
+    relation2id['self_loop'] = len(relation2id)
+    print(f"# relation: {len(relation2id)}")
+
+    kg_idx = {}
+    for head, relation_tails in kg.items():
+        if head in entity2id:
+            head = entity2id[head]
+            kg_idx[head] = [(relation2id['self_loop'], head)]
+            for relation_tail in relation_tails:
+                if relation_tail[0] in relation2id and relation_tail[1] in entity2id:
+                    kg_idx[head].append((relation2id[relation_tail[0]], entity2id[relation_tail[1]]))
+
+    return entity2id, relation2id, kg_idx
+
+
+all_item = set()
+file_list = [
+    'test.jsonl',
+    'dev.jsonl',
+    'train.jsonl',
+]
+for file in file_list:
+    all_item |= get_item_set(file)
+print(f'# all item: {len(all_item)}')
+
+with open('inspired/kg.pkl', 'rb') as f:
+    kg = pkl.load(f)
+subkg = extract_subkg(kg, all_item, 2)
+entity2id, relation2id, subkg = kg2id(subkg)
+
+with open('inspired/dbpedia_subkg.json', 'w', encoding='utf-8') as f:
+    json.dump(subkg, f, ensure_ascii=False)
+with open('inspired/entity2id.json', 'w', encoding='utf-8') as f:
+    json.dump(entity2id, f, ensure_ascii=False)
+with open('inspired/relation2id.json', 'w', encoding='utf-8') as f:
+    json.dump(relation2id, f, ensure_ascii=False)
+
+with open('inspired/entity2id.json', encoding='utf-8') as f:
+    entity2id = json.load(f)
+
+
+def remove(src_file, tgt_file):
+    tgt = open('inspired/' + tgt_file, 'w', encoding='utf-8')
+    with open('inspired/' + src_file, encoding='utf-8') as f:
+        for line in tqdm(f):
+            line = json.loads(line)
+            for i, message in enumerate(line):
+                new_entity, new_entity_name = [], []
+                for j, entity in enumerate(message['entity_link']):
+                    if entity in entity2id:
+                        new_entity.append(entity)
+                        new_entity_name.append(message['entity_name'][j])
+                line[i]['entity_link'] = new_entity
+                line[i]['entity_name'] = new_entity_name
+
+                new_movie, new_movie_name = [], []
+                for j, movie in enumerate(message['movie_link']):
+                    if movie in entity2id:
+                        new_movie.append(movie)
+                        new_movie_name.append(message['movie_name'][j])
+                line[i]['movie_link'] = new_movie
+                line[i]['movie_name'] = new_movie_name
+
+            tgt.write(json.dumps(line, ensure_ascii=False) + '\n')
+    tgt.close()
+
+
+src_files = ['test.jsonl', 'dev.jsonl', 'train.jsonl']
+tgt_files = ['test_data_dbpedia.jsonl', 'valid_data_dbpedia.jsonl', 'train_data_dbpedia.jsonl']
+for src_file, tgt_file in zip(src_files, tgt_files):
+    remove(src_file, tgt_file)
+
+def process(data_file, out_file, movie_set):
+    with open('inspired/' + data_file, 'r', encoding='utf-8') as fin, open('inspired/' + out_file, 'w', encoding='utf-8') as fout:
+        for line in tqdm(fin):
+            dialog = json.loads(line)
+
+            context, response, text = [], [], ''
+            entity_list, movie_list = [], []
+
+            for turn in dialog:
+                text = turn['text']
+                entity_link = [entity2id[entity] for entity in turn['entity_link'] if entity in entity2id]
+                movie_link = [entity2id[movie] for movie in turn['movie_link'] if movie in entity2id]
+                
+                #if movie_link != ['']:
+                #    print(movie_link)
+
+                if turn['role'] == 'SEEKER':
+                    context.append(word_tokenize(text))
+                    #entity_list.extend(entity_link + movie_link)
+                else:
+                    response.append(word_tokenize(text))
+                    #entity_list.extend(entity_link + movie_link)
+                    
+                #if len(context) == 0:
+                #    context.append('')
+                    
+                entity_list.extend(entity_link + movie_link)
+                movie_set |= set(movie_link)
+                movie_list.extend(movie_link)
+
+            for movie in movie_list:
+                lastmovie = movie
+
+            turn = {
+                    'contexts': context,
+                    'response': response,
+                    'entity': list(set(entity_list)),
+                    'movie': lastmovie,
+                    'rec': 1
+                }
+            fout.write(json.dumps(turn, ensure_ascii=False) + '\n')
+
+                #context.append(resp)
+                
+
+with open('inspired/entity2id.json', 'r', encoding='utf-8') as f:
+    entity2id = json.load(f)
+item_set = set()
+
+process('test_data_dbpedia.jsonl', 'test_data_processed.jsonl', item_set)
+process('valid_data_dbpedia.jsonl', 'valid_data_processed.jsonl', item_set)
+process('train_data_dbpedia.jsonl', 'train_data_processed.jsonl', item_set)
+
+with open('item_ids.json', 'w', encoding='utf-8') as f:
+    json.dump(list(item_set), f, ensure_ascii=False)
+print(f'#item: {len(item_set)}')
+

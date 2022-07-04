@@ -8,8 +8,21 @@ from torch.utils.data.dataset import Dataset
 import numpy as np
 from copy import deepcopy
 
+#entity2entityId=pkl.load(open('data/entity2entityId.pkl','rb'))
+#print(dict(list(entity2entityId.items())[0:2]))
+#id2entityId=pkl.load(open('data/id2entity.pkl','rb'))
+#print(dict(list(id2entityId.items())[0:2]))
+#subkg=pkl.load(open('data/subkg.pkl','rb'))
+#print(dict(list(subkg.items())[0:2]))
+#text_dict=pkl.load(open('data/text_dict.pkl','rb'))
+#print(dict(list(text_dict.items())[0:1]))
+#exit()
+#text_dict=pkl.load(open('data/movie_ids.pkl','rb'))
+#print(text_dict[:2])
+#exit()
+
 class dataset(object):
-    def __init__(self,filename,opt):
+    def __init__(self,filename):
         self.entity2entityId=pkl.load(open('data/entity2entityId.pkl','rb'))
         self.entity_max=len(self.entity2entityId)
 
@@ -17,11 +30,11 @@ class dataset(object):
         self.subkg=pkl.load(open('data/subkg.pkl','rb'))    #need not back process
         self.text_dict=pkl.load(open('data/text_dict.pkl','rb'))
 
-        self.batch_size=opt['batch_size']
-        self.max_c_length=opt['max_c_length']
-        self.max_r_length=opt['max_r_length']
-        self.max_count=opt['max_count']
-        self.entity_num=opt['n_entity']
+        #self.batch_size=opt['batch_size']
+        #self.max_c_length=opt['max_c_length']
+        #self.max_r_length=opt['max_r_length']
+        #self.max_count=opt['max_count']
+        #self.entity_num=opt['n_entity']
         #self.word2index=json.load(open('word2index.json',encoding='utf-8'))
 
         f=open(filename,encoding='utf-8')
@@ -155,6 +168,7 @@ class dataset(object):
 
             data_set.append([np.array(context),c_lengths,np.array(response),r_length,np.array(mask_response),mask_r_length,line['entity'],
                              line['movie'],concept_mask,dbpedia_mask,line['rec']])
+
         return data_set
 
     def co_occurance_ext(self,data):
@@ -296,6 +310,7 @@ class dataset(object):
                     if word not in entities_set:
                         entities.append(word)
                         entities_set.add(word)
+        print(cases[0])
         return cases
 
 class CRSdataset(Dataset):
