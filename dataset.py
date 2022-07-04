@@ -5,8 +5,12 @@ import json
 from nltk import word_tokenize
 import re
 from torch.utils.data.dataset import Dataset
-import numpy as np
 from copy import deepcopy
+import gensim
+from collections import defaultdict
+from tqdm.auto import tqdm
+import os.path
+from tqdm import tqdm
 
 #entity2entityId=pkl.load(open('data/entity2entityId.pkl','rb'))
 #print(dict(list(entity2entityId.items())[0:2]))
@@ -22,7 +26,7 @@ from copy import deepcopy
 #exit()
 
 class dataset(object):
-    def __init__(self,filename):
+    def __init__(self,filename,opt):
         self.entity2entityId=pkl.load(open('data/entity2entityId.pkl','rb'))
         self.entity_max=len(self.entity2entityId)
 
@@ -30,16 +34,63 @@ class dataset(object):
         self.subkg=pkl.load(open('data/subkg.pkl','rb'))    #need not back process
         self.text_dict=pkl.load(open('data/text_dict.pkl','rb'))
 
-        #self.batch_size=opt['batch_size']
-        #self.max_c_length=opt['max_c_length']
-        #self.max_r_length=opt['max_r_length']
-        #self.max_count=opt['max_count']
-        #self.entity_num=opt['n_entity']
-        #self.word2index=json.load(open('word2index.json',encoding='utf-8'))
+        #all_item = set()
+        #file_list = [
+        #    'test.jsonl',
+        #    'dev.jsonl',
+        #    'train.jsonl',
+        #]
+        #for file in file_list:
+        #    self.all_item |= self.get_item_set(file)
 
-        f=open(filename,encoding='utf-8')
+        self.item = self.get_item_set(filename)
+
+        #print(f'# all item: {len(all_item)}')
+
+        with open('inspired/kg.pkl', 'rb') as f:
+            kg = pkl.load(f)
+        self.subkg = self._extract_subkg(kg, self.item, 2)
+        self.entity2id, self.relation2id, self.subkg = self.kg2id(self.subkg)
+
+        with open('inspired/dbpedia_subkg.json', 'w', encoding='utf-8') as f:
+            json.dump(self.subkg, f, ensure_ascii=False)
+        with open('inspired/entity2id.json', 'w', encoding='utf-8') as f:
+            json.dump(self.entity2id, f, ensure_ascii=False)
+        with open('inspired/relation2id.json', 'w', encoding='utf-8') as f:
+            json.dump(self.relation2id, f, ensure_ascii=False)
+
+        with open('inspired/entity2id.json', encoding='utf-8') as f:
+            self.entity2id = json.load(f)
+
+        self.src_file = filename
+        self.tgt_file = filename + '_data_dbpedia.jsonl'
+        self.remove(self.src_file, self.tgt_file)
+
+        self.item_set = set()
+
+        #self.process('test_data_dbpedia.jsonl', 'test_data_processed.jsonl', item_set)
+        #self.process('valid_data_dbpedia.jsonl', 'valid_data_processed.jsonl', item_set)
+
+        self.data_file = filename + '_data_dbpedia.jsonl'
+        self.out_file = filename + '_data_processed.jsonl'
+        self.process(self.data_file, self.out_file, self.item_set)
+
+        with open('item_ids.json', 'w', encoding='utf-8') as f:
+            json.dump(list(self.item_set), f, ensure_ascii=False)
+        print(f'#item: {len(self.item_set)}')
+
+        self.batch_size=opt['batch_size']
+        self.max_c_length=opt['max_c_length']
+        self.max_r_length=opt['max_r_length']
+        self.max_count=opt['max_count']
+        self.entity_num=opt['n_entity']
+        self.word2index=json.load(open('word2index.json',encoding='utf-8'))
+
+        #print(type(corpus))
+        #print(len(corpus))
+        #print(corpus[:5])
         self.data=[]
-        self.corpus=[]
+        #self.corpus=[]
         for line in tqdm(f):
             lines=json.loads(line.strip())
             seekerid=lines["initiatorWorkerId"]
@@ -50,11 +101,15 @@ class dataset(object):
             initial_altitude=lines['initiatorQuestions']
             cases=self._context_reformulate(contexts,movies,altitude,initial_altitude,seekerid,recommenderid)
             self.data.extend(cases)
+        #print(type(self.corpus))
+        #print(len(self.corpus))
+        #print(self.corpus[:5])
 
         #if 'train' in filename:
 
         #self.prepare_word2vec()
-        self.word2index = json.load(open('word2index_redial.json', encoding='utf-8'))
+        #self.word2index = json.load(open('word2index_redial.json', encoding='utf-8'))
+        self.word2index = json.load(open('word2index_inspired.json', encoding='utf-8'))
         self.key2index=json.load(open('key2index_3rd.json',encoding='utf-8'))
 
         self.stopwords=set([word.strip() for word in open('stopwords.txt',encoding='utf-8')])
@@ -62,21 +117,184 @@ class dataset(object):
         #self.co_occurance_ext(self.data)
         #exit()
 
+    def get_item_set(self, file):
+        entity = set()
+        with open('inspired/' + file, 'r', encoding='utf-8') as f:
+            for line in tqdm(f):
+                line = json.loads(line)
+                for turn in line:
+                    for e in turn['movie_link']:
+                        entity.add(e)
+        return entity
+
+    def extract_subkg(self, kg, seed_set, n_hop):
+        subkg = defaultdict(list)  # {head entity: [(relation, tail entity)]}
+        subkg_hrt = set()  # {(head_entity, relation, tail_entity)}
+
+        ripple_set = None
+        for hop in range(n_hop):
+            memories_h = set()  # [head_entity]
+            memories_r = set()  # [relation]
+            memories_t = set()  # [tail_entity]
+
+            if hop == 0:
+                tails_of_last_hop = seed_set  # [entity]
+            else:
+                tails_of_last_hop = ripple_set[2]  # [tail_entity]
+
+            for entity in tqdm(tails_of_last_hop):
+                for relation_and_tail in kg[entity]:
+                    h, r, t = entity, relation_and_tail[0], relation_and_tail[1]
+                    if (h, r, t) not in subkg_hrt:
+                        subkg_hrt.add((h, r, t))
+                        subkg[h].append((r, t))
+                    memories_h.add(h)
+                    memories_r.add(r)
+                    memories_t.add(t)
+
+            ripple_set = (memories_h, memories_r, memories_t)
+
+        return subkg
+
+    def kg2id(self, kg):
+        entity_set = self.item
+
+        with open('inspired/relation_set.json', encoding='utf-8') as f:
+            relation_set = json.load(f)
+
+        for head, relation_tails in tqdm(kg.items()):
+            for relation_tail in relation_tails:
+                if relation_tail[0] in relation_set:
+                    entity_set.add(head)
+                    entity_set.add(relation_tail[1])
+
+        entity2id = {e: i for i, e in enumerate(entity_set)}
+        print(f"# entity: {len(entity2id)}")
+        relation2id = {r: i for i, r in enumerate(relation_set)}
+        relation2id['self_loop'] = len(relation2id)
+        print(f"# relation: {len(relation2id)}")
+
+        kg_idx = {}
+        for head, relation_tails in kg.items():
+            if head in entity2id:
+                head = entity2id[head]
+                kg_idx[head] = [(relation2id['self_loop'], head)]
+                for relation_tail in relation_tails:
+                    if relation_tail[0] in relation2id and relation_tail[1] in entity2id:
+                        kg_idx[head].append((relation2id[relation_tail[0]], entity2id[relation_tail[1]]))
+
+        return entity2id, relation2id, kg_idx
+
+
+    def remove(self, src_file, tgt_file):
+        tgt = open('inspired/' + tgt_file, 'w', encoding='utf-8')
+        with open('inspired/' + src_file, encoding='utf-8') as f:
+            for line in tqdm(f):
+                line = json.loads(line)
+                for i, message in enumerate(line):
+                    new_entity, new_entity_name = [], []
+                    for j, entity in enumerate(message['entity_link']):
+                        if entity in self.entity2id:
+                            new_entity.append(entity)
+                            new_entity_name.append(message['entity_name'][j])
+                    line[i]['entity_link'] = new_entity
+                    line[i]['entity_name'] = new_entity_name
+
+                    new_movie, new_movie_name = [], []
+                    for j, movie in enumerate(message['movie_link']):
+                        if movie in self.entity2id:
+                            new_movie.append(movie)
+                            new_movie_name.append(message['movie_name'][j])
+                    line[i]['movie_link'] = new_movie
+                    line[i]['movie_name'] = new_movie_name
+
+                tgt.write(json.dumps(line, ensure_ascii=False) + '\n')
+        tgt.close()
+
+    def process(self, data_file, out_file, movie_set):
+        with open('inspired/' + data_file, 'r', encoding='utf-8') as fin, open('inspired/' + out_file, 'w', encoding='utf-8') as fout:
+            for line in tqdm(fin):
+                dialog = json.loads(line)
+
+                context, response, text = [], [], ''
+                entity_list, movie_list = [], []
+
+                for turn in dialog:
+                    text = turn['text']
+                    entity_link = [self.entity2id[entity] for entity in turn['entity_link'] if entity in self.entity2id]
+                    movie_link = [self.entity2id[movie] for movie in turn['movie_link'] if movie in self.entity2id]
+                
+                    #if movie_link != ['']:
+                    #print(movie_link)
+
+                    if turn['role'] == 'SEEKER':
+                        context.append(word_tokenize(text))
+                        #entity_list.extend(entity_link + movie_link)
+                    else:
+                        response.append(word_tokenize(text))
+                        #entity_list.extend(entity_link + movie_link)
+                    
+                    #if len(context) == 0:
+                    #context.append('')
+                    
+                    entity_list.extend(entity_link + movie_link)
+                    movie_set |= set(movie_link)
+                    movie_list.extend(movie_link)
+
+                for movie in movie_list:
+                    lastmovie = movie
+
+                turn = {
+                        'contexts': context,
+                        'response': response,
+                        'entity': list(set(entity_list)),
+                        'movie': lastmovie,
+                        'rec': 1
+                    }
+                fout.write(json.dumps(turn, ensure_ascii=False) + '\n')
+
     def prepare_word2vec(self):
-        import gensim
-        model=gensim.models.word2vec.Word2Vec(self.corpus,size=300,min_count=1)
-        model.save('word2vec_redial')
-        word2index = {word: i + 4 for i, word in enumerate(model.wv.index2word)}
+        corpus = []
+        with open('inspired/' + self.out_file, 'r', encoding = 'utf-8') as f:
+            for line in tqdm(f):
+                dialog = json.loads(line)
+                for word in dialog['contexts']:
+                    #for letter in word:
+                    corpus.append(word)
+             
+                for word in dialog['response']:
+                    #for letter in word:
+                    corpus.append(word)
+
+        modelinspired=gensim.models.word2vec.Word2Vec(sentences = corpus,vector_size=300,min_count=1)
+        modelinspired.save('word2vec_inspired')
+        word2index = {word: i + 4 for i, word in enumerate(modelinspired.wv.index_to_key)}
         #word2index['_split_']=len(word2index)+4
         #json.dump(word2index, open('word2index_redial.json', 'w', encoding='utf-8'), ensure_ascii=False)
-        word2embedding = [[0] * 300] * 4 + [model[word] for word in word2index]+[[0]*300]
+        word2embedding = [[0] * 300] * 4 + [modelinspired.wv[word] for word in word2index]+[[0]*300]
         import numpy as np
         
         word2index['_split_']=len(word2index)+4
-        json.dump(word2index, open('word2index_redial.json', 'w', encoding='utf-8'), ensure_ascii=False)
+        json.dump(word2index, open('word2index_inspired.json', 'w', encoding='utf-8'), ensure_ascii=False)
 
         print(np.shape(word2embedding))
-        np.save('word2vec_redial.npy', word2embedding)
+        np.save('word2vec_inspired.npy', word2embedding)
+
+        #import gensim
+        #model=gensim.models.word2vec.Word2Vec(self.corpus,size=300,min_count=1)
+        #model.save('word2vec_redial')
+        #word2index = {word: i + 4 for i, word in enumerate(model.wv.index2word)}
+        ##word2index['_split_']=len(word2index)+4
+        ##json.dump(word2index, open('word2index_redial.json', 'w', encoding='utf-8'), ensure_ascii=False)
+        #word2embedding = [[0] * 300] * 4 + [model[word] for word in word2index]+[[0]*300]
+        #import numpy as np
+        
+        #word2index['_split_']=len(word2index)+4
+        #json.dump(word2index, open('word2index_redial.json', 'w', encoding='utf-8'), ensure_ascii=False)
+
+        #print(np.shape(word2embedding))
+        #np.save('word2vec_redial.npy', word2embedding)
+
 
     def padding_w2v(self,sentence,max_length,transformer=True,pad=0,end=2,unk=3):
         vector=[]
@@ -250,67 +468,67 @@ class dataset(object):
         return token_text_com,movie_rec_trans
 
     def _context_reformulate(self,context,movies,altitude,ini_altitude,s_id,re_id):
-        last_id=None
-        #perserve the list of dialogue
-        context_list=[]
-        for message in context:
-            entities=[]
-            try:
-                for entity in self.text_dict[message['text']]:
-                    try:
-                        entities.append(self.entity2entityId[entity])
-                    except:
-                        pass
-            except:
-                pass
-            token_text,movie_rec=self.detect_movie(message['text'],movies)
-            if len(context_list)==0:
-                context_dict={'text':token_text,'entity':entities+movie_rec,'user':message['senderWorkerId'],'movie':movie_rec}
-                context_list.append(context_dict)
-                last_id=message['senderWorkerId']
-                continue
-            if message['senderWorkerId']==last_id:
-                context_list[-1]['text']+=token_text
-                context_list[-1]['entity']+=entities+movie_rec
-                context_list[-1]['movie']+=movie_rec
-            else:
-                context_dict = {'text': token_text, 'entity': entities+movie_rec,
-                           'user': message['senderWorkerId'], 'movie':movie_rec}
-                context_list.append(context_dict)
-                last_id = message['senderWorkerId']
 
-        cases=[]
-        contexts=[]
-        entities_set=set()
-        entities=[]
-        for context_dict in context_list:
-            self.corpus.append(context_dict['text'])
-            if context_dict['user']==re_id and len(contexts)>0:
-                response=context_dict['text']
+        #last_id=None
+        ##perserve the list of dialogue
+        #context_list=[]
+        #for message in context:
+        #    entities=[]
+        #    try:
+        #        for entity in self.text_dict[message['text']]:
+        #            try:
+        #                entities.append(self.entity2entityId[entity])
+        #            except:
+        #                pass
+        #    except:
+        #        pass
+        #    token_text,movie_rec=self.detect_movie(message['text'],movies)
+        #    if len(context_list)==0:
+        #        context_dict={'text':token_text,'entity':entities+movie_rec,'user':message['senderWorkerId'],'movie':movie_rec}
+        #        context_list.append(context_dict)
+        #        last_id=message['senderWorkerId']
+        #        continue
+        #    if message['senderWorkerId']==last_id:
+        #        context_list[-1]['text']+=token_text
+        #        context_list[-1]['entity']+=entities+movie_rec
+        #        context_list[-1]['movie']+=movie_rec
+        #    else:
+        #        context_dict = {'text': token_text, 'entity': entities+movie_rec,
+        #                   'user': message['senderWorkerId'], 'movie':movie_rec}
+        #        context_list.append(context_dict)
+        #        last_id = message['senderWorkerId']
 
-                #entity_vec=np.zeros(self.entity_num)
-                #for en in list(entities):
-                #    entity_vec[en]=1
-                #movie_vec=np.zeros(self.entity_num+1,dtype=np.float)
-                if len(context_dict['movie'])!=0:
-                    for movie in context_dict['movie']:
-                        #if movie not in entities_set:
-                        cases.append({'contexts': deepcopy(contexts), 'response': response, 'entity': deepcopy(entities), 'movie': movie, 'rec':1})
-                else:
-                    cases.append({'contexts': deepcopy(contexts), 'response': response, 'entity': deepcopy(entities), 'movie': 0, 'rec':0})
+        #cases=[]
+        #contexts=[]
+        #entities_set=set()
+        #entities=[]
+        #for context_dict in context_list:
+        #    self.corpus.append(context_dict['text'])
+        #    if context_dict['user']==re_id and len(contexts)>0:
+        #        response=context_dict['text']
 
-                contexts.append(context_dict['text'])
-                for word in context_dict['entity']:
-                    if word not in entities_set:
-                        entities.append(word)
-                        entities_set.add(word)
-            else:
-                contexts.append(context_dict['text'])
-                for word in context_dict['entity']:
-                    if word not in entities_set:
-                        entities.append(word)
-                        entities_set.add(word)
-        print(cases[0])
+        #        #entity_vec=np.zeros(self.entity_num)
+        #        #for en in list(entities):
+        #        #    entity_vec[en]=1
+        #        #movie_vec=np.zeros(self.entity_num+1,dtype=np.float)
+        #        if len(context_dict['movie'])!=0:
+        #            for movie in context_dict['movie']:
+        #                #if movie not in entities_set:
+        #                cases.append({'contexts': deepcopy(contexts), 'response': response, 'entity': deepcopy(entities), 'movie': movie, 'rec':1})
+        #        else:
+        #            cases.append({'contexts': deepcopy(contexts), 'response': response, 'entity': deepcopy(entities), 'movie': 0, 'rec':0})
+
+        #        contexts.append(context_dict['text'])
+        #        for word in context_dict['entity']:
+        #            if word not in entities_set:
+        #                entities.append(word)
+        #                entities_set.add(word)
+        #    else:
+        #        contexts.append(context_dict['text'])
+        #        for word in context_dict['entity']:
+        #            if word not in entities_set:
+        #                entities.append(word)
+        #                entities_set.add(word)
         return cases
 
 class CRSdataset(Dataset):
@@ -352,5 +570,5 @@ class CRSdataset(Dataset):
         return len(self.data)
 
 if __name__=='__main__':
-    ds=dataset('data/train_data.jsonl')
+    ds=dataset('inspired/train.jsonl')
     print()
