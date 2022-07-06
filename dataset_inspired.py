@@ -81,7 +81,7 @@ def kg2id(kg):
 all_item = set()
 file_list = [
     'test.jsonl',
-    'dev.jsonl',
+    'valid.jsonl',
     'train.jsonl',
 ]
 for file in file_list:
@@ -93,15 +93,35 @@ with open('inspired/kg.pkl', 'rb') as f:
 subkg = extract_subkg(kg, all_item, 2)
 entity2id, relation2id, subkg = kg2id(subkg)
 
-with open('inspired/dbpedia_subkg.json', 'w', encoding='utf-8') as f:
-    json.dump(subkg, f, ensure_ascii=False)
-with open('inspired/entity2id.json', 'w', encoding='utf-8') as f:
-    json.dump(entity2id, f, ensure_ascii=False)
-with open('inspired/relation2id.json', 'w', encoding='utf-8') as f:
-    json.dump(relation2id, f, ensure_ascii=False)
+file = open('inspired/dbpedia_subkg.pkl', 'wb')
+## dump information to that file
+pkl.dump(subkg, file)
+## close the file
+file.close()
 
-with open('inspired/entity2id.json', encoding='utf-8') as f:
-    entity2id = json.load(f)
+file = open('inspired/entity2id.pkl', 'wb')
+## dump information to that file
+pkl.dump(entity2id, file)
+## close the file
+file.close()
+
+file = open('inspired/relation2id.pkl', 'wb')
+## dump information to that file
+pkl.dump(relation2id, file)
+## close the file
+file.close()
+
+#with open('inspired/dbpedia_subkg.json', 'w', encoding='utf-8') as f:
+#    json.dump(subkg, f, ensure_ascii=False)
+#with open('inspired/entity2id.json', 'w', encoding='utf-8') as f:
+#    json.dump(entity2id, f, ensure_ascii=False)
+#with open('inspired/relation2id.json', 'w', encoding='utf-8') as f:
+#    json.dump(relation2id, f, ensure_ascii=False)
+
+#with open('inspired/entity2id.json', encoding='utf-8') as f:
+#    entity2id = json.load(f)
+
+entity2id = pkl.load(open('inspired/entity2id.pkl','rb'))
 
 
 def remove(src_file, tgt_file):
@@ -130,7 +150,7 @@ def remove(src_file, tgt_file):
     tgt.close()
 
 
-src_files = ['test.jsonl', 'dev.jsonl', 'train.jsonl']
+src_files = ['test.jsonl', 'valid.jsonl', 'train.jsonl']
 tgt_files = ['test_data_dbpedia.jsonl', 'valid_data_dbpedia.jsonl', 'train_data_dbpedia.jsonl']
 for src_file, tgt_file in zip(src_files, tgt_files):
     remove(src_file, tgt_file)
@@ -144,6 +164,8 @@ def process(data_file, out_file, movie_set):
             entity_list, movie_list = [], []
 
             for turn in dialog:
+                #print(turn)
+                #exit()
                 text = turn['text']
                 entity_link = [entity2id[entity] for entity in turn['entity_link'] if entity in entity2id]
                 movie_link = [entity2id[movie] for movie in turn['movie_link'] if movie in entity2id]
@@ -177,16 +199,22 @@ def process(data_file, out_file, movie_set):
                 }
             fout.write(json.dumps(turn, ensure_ascii=False) + '\n')
 
-with open('inspired/entity2id.json', 'r', encoding='utf-8') as f:
-    entity2id = json.load(f)
+#with open('inspired/entity2id.json', 'r', encoding='utf-8') as f:
+#    entity2id = json.load(f)
 item_set = set()
 
 process('test_data_dbpedia.jsonl', 'test_data_processed.jsonl', item_set)
 process('valid_data_dbpedia.jsonl', 'valid_data_processed.jsonl', item_set)
 process('train_data_dbpedia.jsonl', 'train_data_processed.jsonl', item_set)
 
-with open('item_ids.json', 'w', encoding='utf-8') as f:
-    json.dump(list(item_set), f, ensure_ascii=False)
+#with open('inspired/item_ids.json', 'w', encoding='utf-8') as f:
+#    json.dump(list(item_set), f, ensure_ascii=False)
+file = open('inspired/item_ids.pkl', 'wb')
+## dump information to that file
+pkl.dump(list(item_set), file)
+## close the file
+file.close()
+
 print(f'#item: {len(item_set)}')
 
 #corpus = []

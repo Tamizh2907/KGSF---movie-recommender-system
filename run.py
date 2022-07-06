@@ -55,10 +55,10 @@ def is_distributed():
 
 def setup_args():
     train = argparse.ArgumentParser()
-    train.add_argument("-max_c_length","--max_c_length",type=int,default=256)
-    train.add_argument("-max_r_length","--max_r_length",type=int,default=30)
+    train.add_argument("-max_c_length","--max_c_length",type=int,default=512)
+    train.add_argument("-max_r_length","--max_r_length",type=int,default=512)
     train.add_argument("-batch_size","--batch_size",type=int,default=32)
-    train.add_argument("-max_count","--max_count",type=int,default=5)
+    train.add_argument("-max_count","--max_count",type=int,default=20)
     train.add_argument("-use_cpu","--use_cpu",type=bool,default=True)
     train.add_argument("-load_dict","--load_dict",type=str,default=None)
     train.add_argument("-learningrate","--learningrate",type=float,default=1e-3)
@@ -100,7 +100,7 @@ def setup_args():
 class TrainLoop_fusion_rec():
     def __init__(self, opt, is_finetune):
         self.opt=opt
-        self.train_dataset=dataset('data/train_data.jsonl',opt)
+        self.train_dataset=dataset('train.jsonl',opt)
 
         self.dict=self.train_dataset.word2index
         self.index2word={self.dict[key]:key for key in self.dict}
@@ -115,7 +115,10 @@ class TrainLoop_fusion_rec():
             self.load_data=False
         self.is_finetune=False
 
-        self.movie_ids = pkl.load(open("data/movie_ids.pkl", "rb"))
+        #with open('inspired/item_ids.json', 'r', encoding='utf-8') as f:
+        #    self.movie_ids = json.load(f)
+        #print(self.movie_ids)
+        self.movie_ids = pkl.load(open("inspired/item_ids.pkl", "rb"))
         # Note: we cannot change the type of metrics ahead of time, so you
         # should correctly initialize to floats or ints here
 
@@ -226,33 +229,56 @@ class TrainLoop_fusion_rec():
 
     def metrics_cal_rec(self,rec_loss,scores,labels):
         batch_size = len(labels.view(-1).tolist())
+        #print(labels)
+        #print(batch_size)
+        #print(type(labels))
+        #print(self.movie_ids)
+        #labels[1] = 31242
+        #print(labels[1].item())
+        #print(self.movie_ids.index(labels[1].item()))
         self.metrics_rec["loss"] += rec_loss
         outputs = scores.cpu()
+        #print(outputs)
         outputs = outputs[:, torch.LongTensor(self.movie_ids)]
+        #print(outputs)
+        #exit()
         _, pred_idx = torch.topk(outputs, k=100, dim=1)
+        #print(pred_idx)
+        #exit()
         for b in range(batch_size):
             if labels[b].item()==0:
                 continue
+            #print(labels[b])
+            #print(labels[b].item())
+            #exit()
+            #labels[b] = 15332
             target_idx = self.movie_ids.index(labels[b].item())
+            #print(target_idx)
             self.metrics_rec["recall@1"] += int(target_idx in pred_idx[b][:1].tolist())
+            #print(self.metrics_rec["recall@1"])
             self.metrics_rec["recall@10"] += int(target_idx in pred_idx[b][:10].tolist())
+            #print(self.metrics_rec["recall@10"])
             self.metrics_rec["recall@50"] += int(target_idx in pred_idx[b][:50].tolist())
+            #print(self.metrics_rec["recall@50"])
             self.metrics_rec["count"] += 1
+        #exit()
 
     def val(self,is_test=False):
         self.metrics_gen={"ppl":0,"dist1":0,"dist2":0,"dist3":0,"dist4":0,"bleu1":0,"bleu2":0,"bleu3":0,"bleu4":0,"count":0}
         self.metrics_rec={"recall@1":0,"recall@10":0,"recall@50":0,"loss":0,"gate":0,"count":0,'gate_count':0}
         self.model.eval()
         if is_test:
-            val_dataset = dataset('data/test_data.jsonl', self.opt)
+            val_dataset = dataset('test.jsonl', self.opt)
         else:
-            val_dataset = dataset('data/valid_data.jsonl', self.opt)
+            val_dataset = dataset('valid.jsonl', self.opt)
         val_set=CRSdataset(val_dataset.data_process(),self.opt['n_entity'],self.opt['n_concept'])
         val_dataset_loader = torch.utils.data.DataLoader(dataset=val_set,
                                                            batch_size=self.batch_size,
                                                            shuffle=False)
         recs=[]
         for context, c_lengths, response, r_length, mask_response, mask_r_length, entity, entity_vector, movie, concept_mask, dbpedia_mask, concept_vec, db_vec, rec in tqdm(val_dataset_loader):
+            #print(movie)
+            #exit()
             with torch.no_grad():
                 seed_sets = []
                 batch_size = context.shape[0]
@@ -370,7 +396,7 @@ class TrainLoop_fusion_rec():
 class TrainLoop_fusion_gen():
     def __init__(self, opt, is_finetune):
         self.opt=opt
-        self.train_dataset=dataset('data/train_data.jsonl',opt)
+        self.train_dataset=dataset('train.jsonl',opt)
 
         self.dict=self.train_dataset.word2index
         self.index2word={self.dict[key]:key for key in self.dict}
@@ -385,7 +411,7 @@ class TrainLoop_fusion_gen():
             self.load_data=False
         self.is_finetune=False
 
-        self.movie_ids = pkl.load(open("data/movie_ids.pkl", "rb"))
+        self.movie_ids = pkl.load(open("movie_ids_new.pkl", "rb"))
         # Note: we cannot change the type of metrics ahead of time, so you
         # should correctly initialize to floats or ints here
 
@@ -462,9 +488,9 @@ class TrainLoop_fusion_gen():
         self.metrics_rec={"recall@1":0,"recall@10":0,"recall@50":0,"loss":0,"gate":0,"count":0,'gate_count':0}
         self.model.eval()
         if is_test:
-            val_dataset = dataset('data/test_data.jsonl', self.opt)
+            val_dataset = dataset('test.jsonl', self.opt)
         else:
-            val_dataset = dataset('data/valid_data.jsonl', self.opt)
+            val_dataset = dataset('valid.jsonl', self.opt)
         val_set=CRSdataset(val_dataset.data_process(True),self.opt['n_entity'],self.opt['n_concept'])
         val_dataset_loader = torch.utils.data.DataLoader(dataset=val_set,
                                                            batch_size=self.batch_size,

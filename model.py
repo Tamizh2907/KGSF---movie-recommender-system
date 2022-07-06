@@ -165,11 +165,11 @@ class CrossModel(nn.Module):
 
         #self.concept_GCN4gen=GCNConv(self.dim, opt['embedding_size'])
 
-        w2i=json.load(open('word2index_redial.json',encoding='utf-8'))
+        w2i=json.load(open('word2index_inspired.json', encoding='utf-8'))
         self.i2w={w2i[word]:word for word in w2i}
 
-        self.mask4key=torch.Tensor(np.load('mask4key.npy')).cpu()
-        self.mask4movie=torch.Tensor(np.load('mask4movie.npy')).cpu()
+        self.mask4key=torch.Tensor(np.load('mask4keyinspired.npy')).cpu()
+        self.mask4movie=torch.Tensor(np.load('mask4movieinspired.npy')).cpu()
         self.mask4=self.mask4key+self.mask4movie
         if is_finetune:
             params = [self.dbpedia_RGCN.parameters(), self.concept_GCN.parameters(),

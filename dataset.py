@@ -26,7 +26,7 @@ from tqdm import tqdm
 #exit()
 
 class dataset(object):
-    def __init__(self,filename):
+    def __init__(self,filename,opt):
         self.entity2entityId=pkl.load(open('data/entity2entityId.pkl','rb'))
         self.entity_max=len(self.entity2entityId)
 
@@ -43,30 +43,33 @@ class dataset(object):
         #for file in file_list:
         #    self.all_item |= self.get_item_set(file)
 
-        self.item = self.get_item_set(filename)
+        self.item = self._get_item_set(filename)
 
         #print(f'# all item: {len(all_item)}')
 
         with open('inspired/kg.pkl', 'rb') as f:
             kg = pkl.load(f)
-        self.subkg = self.extract_subkg(kg, self.item, 2)
-        self.entity2id, self.relation2id, self.subkg = self.kg2id(self.subkg)
+        #self.subkg = self._extract_subkg(kg, self.item, 2)
+        #self.entity2id, self.relation2id, self.subkg = self._kg2id(self.subkg)
 
-        with open('inspired/dbpedia_subkg.json', 'w', encoding='utf-8') as f:
-            json.dump(self.subkg, f, ensure_ascii=False)
-        with open('inspired/entity2id.json', 'w', encoding='utf-8') as f:
-            json.dump(self.entity2id, f, ensure_ascii=False)
-        with open('inspired/relation2id.json', 'w', encoding='utf-8') as f:
-            json.dump(self.relation2id, f, ensure_ascii=False)
+        #with open('inspired/dbpedia_subkg.json', 'w', encoding='utf-8') as f:
+        #    json.dump(self.subkg, f, ensure_ascii=False)
+        #with open('inspired/entity2id.json', 'w', encoding='utf-8') as f:
+        #    json.dump(self.entity2id, f, ensure_ascii=False)
+        #with open('inspired/relation2id.json', 'w', encoding='utf-8') as f:
+        #    json.dump(self.relation2id, f, ensure_ascii=False)
 
-        with open('inspired/entity2id.json', encoding='utf-8') as f:
-            self.entity2id = json.load(f)
+        #with open('inspired/entity2id.json', encoding='utf-8') as f:
+        #    self.entity2id = json.load(f)
         
+        self.subkg = pkl.load(open('inspired/dbpedia_subkg.pkl','rb'))
+        self.relation2id = pkl.load(open('inspired/relation2id.pkl','rb'))
+        self.entity2id = pkl.load(open('inspired/entity2id.pkl','rb'))
 
         length = len(filename)
         self.src_file = filename
         self.tgt_file = filename[:length - 6] + '_data_dbpedia.jsonl'
-        self.remove(self.src_file, self.tgt_file)
+        self._remove(self.src_file, self.tgt_file)
 
         self.item_set = set()
 
@@ -75,17 +78,26 @@ class dataset(object):
 
         self.data_file = filename[:length - 6] + '_data_dbpedia.jsonl'
         self.out_file = filename[:length - 6] + '_data_processed.jsonl'
-        self.process(self.data_file, self.out_file, self.item_set)
+        self._process(self.data_file, self.out_file, self.item_set)
 
-        with open('item_ids.json', 'w', encoding='utf-8') as f:
-            json.dump(list(self.item_set), f, ensure_ascii=False)
-        print(f'#item: {len(self.item_set)}')
+        #with open('inspired/item_ids.json', 'w', encoding='utf-8') as f:
+        #    json.dump(list(self.item_set), f, ensure_ascii=False)
+        #print(f'#item: {len(self.item_set)}')
 
-        #self.batch_size=opt['batch_size']
-        #self.max_c_length=opt['max_c_length']
-        #self.max_r_length=opt['max_r_length']
-        #self.max_count=opt['max_count']
-        #self.entity_num=opt['n_entity']
+        #rec_list=[]
+
+        #with open('train_data_processed.jsonl', 'r', encoding='utf-8') as f:
+        #    for line in tqdm(f):
+        #        trainprocessed = json.loads(line)
+        #        #rec_list.append(trainprocessed['movie'])
+        #        for line1 in trainprocessed['rec']:
+        #            rec_list.append(line1)
+
+        self.batch_size=opt['batch_size']
+        self.max_c_length=opt['max_c_length']
+        self.max_r_length=opt['max_r_length']
+        self.max_count=opt['max_count']
+        self.entity_num=opt['n_entity']
         #self.word2index=json.load(open('word2index.json',encoding='utf-8'))
 
         #print(type(corpus))
@@ -110,7 +122,7 @@ class dataset(object):
             #    self.data.extend(values)
 
 
-        print(self.data[0])
+        #print(self.data[0])
 
         #print(type(self.corpus))
         #print(len(self.corpus))
@@ -128,7 +140,7 @@ class dataset(object):
         #self.co_occurance_ext(self.data)
         #exit()
 
-    def get_item_set(self, file):
+    def _get_item_set(self, file):
         entity = set()
         with open('inspired/' + file, 'r', encoding='utf-8') as f:
             for line in tqdm(f):
@@ -138,7 +150,7 @@ class dataset(object):
                         entity.add(e)
         return entity
 
-    def extract_subkg(self, kg, seed_set, n_hop):
+    def _extract_subkg(self, kg, seed_set, n_hop):
         subkg = defaultdict(list)  # {head entity: [(relation, tail entity)]}
         subkg_hrt = set()  # {(head_entity, relation, tail_entity)}
 
@@ -167,7 +179,7 @@ class dataset(object):
 
         return subkg
 
-    def kg2id(self, kg):
+    def _kg2id(self, kg):
         entity_set = self.item
 
         with open('inspired/relation_set.json', encoding='utf-8') as f:
@@ -197,7 +209,7 @@ class dataset(object):
         return entity2id, relation2id, kg_idx
 
 
-    def remove(self, src_file, tgt_file):
+    def _remove(self, src_file, tgt_file):
         tgt = open('inspired/' + tgt_file, 'w', encoding='utf-8')
         with open('inspired/' + src_file, encoding='utf-8') as f:
             for line in tqdm(f):
@@ -222,7 +234,7 @@ class dataset(object):
                 tgt.write(json.dumps(line, ensure_ascii=False) + '\n')
         tgt.close()
 
-    def process(self, data_file, out_file, movie_set):
+    def _process(self, data_file, out_file, movie_set):
         with open('inspired/' + data_file, 'r', encoding='utf-8') as fin, open('inspired/' + out_file, 'w', encoding='utf-8') as fout:
             for line in tqdm(fin):
                 dialog = json.loads(line)
@@ -308,24 +320,29 @@ class dataset(object):
         #np.save('word2vec_redial.npy', word2embedding)
 
 
-    def padding_w2v(self,sentence,max_length,transformer=True,pad=0,end=2,unk=3):
+    def padding_w2v(self,response,max_length,transformer=True,pad=0,end=2,unk=3):
         vector=[]
         concept_mask=[]
         dbpedia_mask=[]
-        for word in sentence:
-            vector.append(self.word2index.get(word,unk))
-            #if word.lower() not in self.stopwords:
-            concept_mask.append(self.key2index.get(word.lower(),0))
+        #print(len(response))
+        for word in response:
+            for letters in word:
+            #print(len(response))
+            #print(word)
+                vector.append(self.word2index.get(letters,unk))
+            ##if word.lower() not in self.stopwords:
+                concept_mask.append(self.key2index.get(letters.lower(),0))
+            #exit()
             #else:
             #    concept_mask.append(0)
-            if '@' in word:
-                try:
-                    entity = self.id2entity[int(word[1:])]
-                    id=self.entity2entityId[entity]
-                except:
-                    id=self.entity_max
-                dbpedia_mask.append(id)
-            else:
+            #if '@' in word:
+            #    try:
+            #        entity = self.id2entity[int(word[1:])]
+            #        id=self.entity2entityId[entity]
+            #    except:
+            #        id=self.entity_max
+            #    dbpedia_mask.append(id)
+            #else:
                 dbpedia_mask.append(self.entity_max)
         vector.append(end)
         concept_mask.append(0)
@@ -359,12 +376,19 @@ class dataset(object):
                     vec_lengths.append(v_l)
                 return vectors+(self.max_count-length)*[[pad]*self.max_c_length],vec_lengths+[0]*(self.max_count-length),length
         else:
+            #print(len(contexts))
+            #print(self.max_count)
             contexts_com=[]
             for sen in contexts[-self.max_count:-1]:
+                #print(contexts[-5:-1])
+                #print(sen)
                 contexts_com.extend(sen)
                 contexts_com.append('_split_')
             contexts_com.extend(contexts[-1])
+            #print(contexts_com)
+            #exit()
             vec,v_l,concept_mask,dbpedia_mask=self.padding_w2v(contexts_com,self.max_c_length,transformer)
+            #print(vec)
             return vec,v_l,concept_mask,dbpedia_mask,0
 
     def response_delibration(self,response,unk='MASKED_WORD'):
@@ -387,7 +411,10 @@ class dataset(object):
             else:
                 context_before = line['contexts']
             context,c_lengths,concept_mask,dbpedia_mask,_=self.padding_context(line['contexts'])
+            #print(context)
+            #print(line['response'])
             response,r_length,_,_=self.padding_w2v(line['response'],self.max_r_length)
+            #print(response)
             if False:
                 mask_response,mask_r_length,_,_=self.padding_w2v(self.response_delibration(line['response']),self.max_r_length)
             else:
@@ -398,7 +425,6 @@ class dataset(object):
 
             data_set.append([np.array(context),c_lengths,np.array(response),r_length,np.array(mask_response),mask_r_length,line['entity'],
                              line['movie'],concept_mask,dbpedia_mask,line['rec']])
-
         return data_set
 
     def co_occurance_ext(self,data):
@@ -575,6 +601,8 @@ class CRSdataset(Dataset):
         for db in dbpedia_mask:
             if db!=0:
                 db_vec[db]=1
+
+        #print(movie)
 
         return context, c_lengths, response, r_length, mask_response, mask_r_length, entity_vec, entity_vector, movie, np.array(concept_mask), np.array(dbpedia_mask), concept_vec, db_vec, rec
 
