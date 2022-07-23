@@ -268,10 +268,10 @@ class TrainLoop_fusion_rec():
         self.metrics_rec={"recall@1":0,"recall@10":0,"recall@50":0,"loss":0,"gate":0,"count":0,'gate_count':0}
         self.model.eval()
         if is_test:
-            val_dataset = dataset('test.jsonl', self.opt)
+            self.val_dataset = dataset('test.jsonl', self.opt)
         else:
-            val_dataset = dataset('valid.jsonl', self.opt)
-        val_set=CRSdataset(val_dataset.data_process(),self.opt['n_entity'],self.opt['n_concept'])
+            self.val_dataset = dataset('valid.jsonl', self.opt)
+        val_set=CRSdataset(self.val_dataset.data_process(),self.opt['n_entity'],self.opt['n_concept'])
         val_dataset_loader = torch.utils.data.DataLoader(dataset=val_set,
                                                            batch_size=self.batch_size,
                                                            shuffle=False)

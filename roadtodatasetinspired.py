@@ -40,19 +40,19 @@ import gensim
 
 #mask4movie = np.load('mask4movie.npy')
 #print(np.shape(mask4movie))
-#mask4movieinspired = np.zeros(11516)
+#mask4movieinspired = np.zeros(24111)
 #print(mask4movie)
 #print(np.shape(mask4movieinspired))
 #print(mask4movieinspired)
-#np.save('mask4movieinspired.npy', mask4movieinspired)
+#np.save('mask4movieinspired2.npy', mask4movieinspired)
 
 #mask4key = np.load('mask4key.npy')
 #print(np.shape(mask4key))
-#mask4keyinspired = np.zeros(11516)
+#mask4keyinspired = np.zeros(24111)
 #print(mask4key)
 #print(np.shape(mask4keyinspired))
 #print(mask4keyinspired)
-#np.save('mask4keyinspired.npy', mask4keyinspired)
+#np.save('mask4keyinspired2.npy', mask4keyinspired)
 
 
 #entity2entityId=pkl.load(open('data/entity2entityId.pkl','rb'))
@@ -65,25 +65,25 @@ import gensim
 ##print(type(text_dict))
 #print(text_dict[:20])
 
-#id2entityId=pkl.load(open('data/id2entity.pkl','rb'))
-#print(dict(list(id2entityId.items())[0:2]))
+##id2entityId=pkl.load(open('data/id2entity.pkl','rb'))
+##print(dict(list(id2entityId.items())[0:2]))
 
 #import random
 #listing = list(range(0,17178))
 
-#random.shuffle(listing)
+##random.shuffle(listing)
 
 
 #file = open('movie_ids_new.pkl', 'wb')
 
-## dump information to that file
+### dump information to that file
 #pkl.dump(listing, file)
 
-## close the file
+### close the file
 #file.close()
 
-#listing = pkl.load(open('movie_ids_new.pkl','rb'))
-#print(listing[:2])
+listing = pkl.load(open('movie_ids_new.pkl','rb'))
+print(listing[:2])
 #rec_list=[]
 
 #with open('train_data_processed.jsonl', 'r', encoding='utf-8') as f:

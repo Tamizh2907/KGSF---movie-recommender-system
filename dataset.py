@@ -1,4 +1,6 @@
+from calendar import c
 import numpy as np
+import csv
 from tqdm import tqdm
 import pickle as pkl
 import json
@@ -235,12 +237,60 @@ class dataset(object):
         tgt.close()
 
     def _process(self, data_file, out_file, movie_set):
+        reader = csv.reader(open('inspired/dialogpt.csv', 'r'), delimiter= ",")
+        corpus = []
+        for line in reader:
+            for field in line:
+                tokens = word_tokenize(field)
+                corpus.append(tokens)
+        #import itertools
+        #corpuslist = list(itertools.chain(*corpus))
+        file_content = open("inspired/dialogpt.txt").read()
+        tokenstxt = word_tokenize(file_content)
+        file_content = open("inspired/glutenbergbooks.txt", encoding = 'utf-8').read()
+        tokensglutenberg = word_tokenize(file_content)
+        corpuslist = []
+        for line in tokenstxt:
+            corpuslist.append(line)
+        for line in tokensglutenberg:
+            corpuslist.append(line)
+        #corpuslist.append(tokenstxt)
+        corpusupdate = [corpuslist[a:a+15] for a in range(0, len(corpuslist), 15)]
+        for line in corpusupdate:
+            corpus.append(line)
+        #for line in tokensglutenberg:
+        #    corpuslist.append(line)
+        x = sum(1 for line in open('inspired/' + data_file, 'r', encoding='utf-8'))
+        chunkvalue = len(corpus)//x
+        chunks = [corpus[a:a+chunkvalue] for a in range(0, len(corpus), chunkvalue)]
+        ##print(len(chunks[0]))
+        ##exit()
         with open('inspired/' + data_file, 'r', encoding='utf-8') as fin, open('inspired/' + out_file, 'w', encoding='utf-8') as fout:
+            #print('file opened')
+            #exit()
+            #x = len(fin.readlines())
+            #chunkvalue = len(corpuslist)//x
+            #chunks = [corpuslist[a:a+chunkvalue] for a in range(0, len(corpuslist), chunkvalue)]
+            ##print(len(chunks[0]))
+            ##exit()
+            count = 0
             for line in tqdm(fin):
+                #print('line opened')
+                #exit()
                 dialog = json.loads(line)
 
                 context, response, text = [], [], ''
                 entity_list, movie_list = [], []
+
+                #context.append(tokens)
+                #response.append(tokenstxt)
+                #response.append(tokensglutenberg)
+
+                chunkshalf = chunks[count]
+                half = len(chunkshalf)//2
+                context.append(chunkshalf[:half]) 
+                response.append(chunkshalf[half:])
+                count+=1
 
                 for turn in dialog:
                     text = turn['text']
@@ -267,6 +317,7 @@ class dataset(object):
                 for movie in movie_list:
                     lastmovie = movie
 
+
                 turn = {
                         'contexts': context,
                         'response': response,
@@ -275,6 +326,13 @@ class dataset(object):
                         'rec': 1
                     }
                 fout.write(json.dumps(turn, ensure_ascii=False) + '\n')
+
+        #with open('inspired/' + out_file, 'w', encoding='utf-8') as fag:
+        #    corpus = []
+        #    corpus.append(tokens)
+        #    corpus.append(tokenstxt)
+        #    corpus.append(tokensglutenberg)
+
 
 
     def prepare_word2vec(self):
@@ -327,11 +385,14 @@ class dataset(object):
         #print(len(response))
         for word in response:
             for letters in word:
+                for digit in letters:
             #print(len(response))
             #print(word)
-                vector.append(self.word2index.get(letters,unk))
+                #print(letters)
+                #exit()
+                    vector.append(self.word2index.get(digit,unk))
             ##if word.lower() not in self.stopwords:
-                concept_mask.append(self.key2index.get(letters.lower(),0))
+                    concept_mask.append(self.key2index.get(digit.lower(),0))
             #exit()
             #else:
             #    concept_mask.append(0)
@@ -343,7 +404,7 @@ class dataset(object):
             #        id=self.entity_max
             #    dbpedia_mask.append(id)
             #else:
-                dbpedia_mask.append(self.entity_max)
+                    dbpedia_mask.append(self.entity_max)
         vector.append(end)
         concept_mask.append(0)
         dbpedia_mask.append(self.entity_max)

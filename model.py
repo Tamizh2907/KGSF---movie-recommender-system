@@ -125,7 +125,8 @@ class CrossModel(nn.Module):
         self.db_attn_norm=nn.Linear(opt['dim'],opt['embedding_size'])
         self.kg_attn_norm=nn.Linear(opt['dim'],opt['embedding_size'])
 
-        self.criterion = nn.CrossEntropyLoss(reduce=False)
+        #self.criterion = nn.CrossEntropyLoss(reduce=False)
+        self.criterion = nn.CrossEntropyLoss(reduction = 'none')
 
         self.self_attn = SelfAttentionLayer_batch(opt['dim'], opt['dim'])
 
@@ -140,8 +141,10 @@ class CrossModel(nn.Module):
         self.info_db_norm = nn.Linear(opt['dim'], opt['dim'])
         self.info_output_db = nn.Linear(opt['dim'], opt['n_entity'])
         self.info_output_con = nn.Linear(opt['dim'], opt['n_concept']+1)
-        self.info_con_loss = nn.MSELoss(size_average=False,reduce=False)
-        self.info_db_loss = nn.MSELoss(size_average=False,reduce=False)
+        #self.info_con_loss = nn.MSELoss(size_average=False,reduce=False)
+        #self.info_db_loss = nn.MSELoss(size_average=False,reduce=False)
+        self.info_con_loss = nn.MSELoss(reduction='none')
+        self.info_db_loss = nn.MSELoss(reduction='none')
 
         self.user_representation_to_bias_1 = nn.Linear(opt['dim'], 512)
         self.user_representation_to_bias_2 = nn.Linear(512, len(dictionary) + 4)
@@ -168,8 +171,8 @@ class CrossModel(nn.Module):
         w2i=json.load(open('word2index_inspired.json', encoding='utf-8'))
         self.i2w={w2i[word]:word for word in w2i}
 
-        self.mask4key=torch.Tensor(np.load('mask4keyinspired.npy')).cpu()
-        self.mask4movie=torch.Tensor(np.load('mask4movieinspired.npy')).cpu()
+        self.mask4key=torch.Tensor(np.load('mask4keyinspired2.npy')).cpu()
+        self.mask4movie=torch.Tensor(np.load('mask4movieinspired2.npy')).cpu()
         self.mask4=self.mask4key+self.mask4movie
         if is_finetune:
             params = [self.dbpedia_RGCN.parameters(), self.concept_GCN.parameters(),
@@ -397,7 +400,7 @@ class CrossModel(nn.Module):
         con_user_emb=graph_con_emb
         con_user_emb,attention=self.self_attn(con_user_emb,con_emb_mask.cpu())
         user_emb=self.user_norm(torch.cat([con_user_emb,db_user_emb],dim=-1))
-        uc_gate = F.sigmoid(self.gate_norm(user_emb))
+        uc_gate = torch.sigmoid(self.gate_norm(user_emb))
         user_emb = uc_gate * db_user_emb + (1 - uc_gate) * con_user_emb
         entity_scores = F.linear(user_emb, db_nodes_features, self.output_en.bias)
         #entity_scores = scores_db * gate + scores_con * (1 - gate)
