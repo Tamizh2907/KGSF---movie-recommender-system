@@ -40,7 +40,7 @@ import gensim
 
 #mask4movie = np.load('mask4movie.npy')
 #print(np.shape(mask4movie))
-#mask4movieinspired = np.zeros(24111)
+#mask4movieinspired = np.zeros(30598)
 #print(mask4movie)
 #print(np.shape(mask4movieinspired))
 #print(mask4movieinspired)
@@ -48,7 +48,7 @@ import gensim
 
 #mask4key = np.load('mask4key.npy')
 #print(np.shape(mask4key))
-#mask4keyinspired = np.zeros(24111)
+#mask4keyinspired = np.zeros(30598)
 #print(mask4key)
 #print(np.shape(mask4keyinspired))
 #print(mask4keyinspired)

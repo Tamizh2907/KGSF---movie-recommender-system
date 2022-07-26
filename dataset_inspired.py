@@ -261,10 +261,14 @@ file_content = open("inspired/dialogpt.txt").read()
 tokenstxt = word_tokenize(file_content)
 file_content = open("inspired/glutenbergbooks.txt", encoding = 'utf-8').read()
 tokensglutenberg = word_tokenize(file_content)
+file_content = open("inspired/morebooks.txt", encoding = 'utf-8').read()
+tokensmorebooks = word_tokenize(file_content)
 corpuslist = []
 for line in tokenstxt:
     corpuslist.append(line)
 for line in tokensglutenberg:
+    corpuslist.append(line)
+for line in tokensmorebooks:
     corpuslist.append(line)
 #print(len(corpus))
 #print(len(corpuslist))
@@ -272,8 +276,8 @@ for line in tokensglutenberg:
 corpusupdate = [corpuslist[a:a+15] for a in range(0, len(corpuslist), 15)]
 #corpuslist.append(tokenstxt)
 #print(corpusupdate[1:10])
-print(len(corpus))
-print(len(corpusupdate))
+#print(len(corpus))
+#print(len(corpusupdate))
 for line in corpusupdate:
     corpus.append(line)
 
