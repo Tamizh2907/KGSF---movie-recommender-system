@@ -9,11 +9,11 @@ pytorch==1.11.0
 
 # Colaboratory
 
-The three versions of colab files are 
+The three versions of colab files used in this project are 
 
-- KGSF_colabload_redial.ipynb - model with ReDial dataset without history
-- KGSF_colablodad_inspiredwithouthistory.ipynb - model with INSPIRED dataset without history
-- KGSF_colabload_inspiredhistory.ipynb - model with INSPIRED dataset with history
+- **KGSF_colabload_redial.ipynb** - model with ReDial dataset without history
+- **KGSF_colablodad_inspiredwithouthistory.ipynb** - model with INSPIRED dataset without history
+- **KGSF_colabload_inspiredhistory.ipynb** - model with INSPIRED dataset with history
 
 # Notation
 The word embedding file **word2vec_inspired.npy** can be downloaded from the google drive https://drive.google.com/file/d/135_vUYLBBomTaqgtX6kmgCoQwvatQmEi/view?usp=sharing
