@@ -1,5 +1,2 @@
-saved_model/*
-word2vec_redial.npy
-word2vec_inspired.npy
-.vs/*
-*.pkl
+vs/*
+pycache/*
