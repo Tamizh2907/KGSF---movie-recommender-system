@@ -4,8 +4,6 @@ The goal of conversational recommender systems (CRS) is to make appropriate reco
 
 <img src="./Figure1again.png" width=400 height=240 />
 
-![](./Figure1again.png)
-
 # Environment
 pytorch==1.11.0
 
