@@ -2,9 +2,9 @@
 
 The goal of conversational recommender systems (CRS) is to make appropriate recommendations through interactive conversation. To do this, CRS must first understand user preferences from previous conversations before making recommendations and eliciting answers.
 
-<img src="./figure1again.png" width=400 height=240 />
+<img src="./Figure1again.png" width=400 height=240 />
 
-![](./figure1again.png)
+![](./Figure1again.png)
 
 # Environment
 pytorch==1.11.0
