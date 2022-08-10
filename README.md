@@ -2,7 +2,7 @@
 
 The goal of conversational recommender systems (CRS) is to make appropriate recommendations through interactive conversation. To do this, CRS must first understand user preferences from previous conversations before making recommendations and eliciting answers.
 
-<img src="./Figure1again.png" width=800 height=500 />
+<img src="./Figure1again.png" width=900 height=600 />
 
 # Environment
 pytorch==1.11.0
@@ -11,9 +11,9 @@ pytorch==1.11.0
 
 The three versions of colab files are 
 
-*KGSF_colabload_redial.ipynb - model with ReDial dataset without history
-*KGSF_colablodad_inspiredwithouthistory.ipynb - model with INSPIRED dataset without history
-*KGSF_colabload_inspiredhistory.ipynb - model with INSPIRED dataset with history
+- KGSF_colabload_redial.ipynb - model with ReDial dataset without history
+- KGSF_colablodad_inspiredwithouthistory.ipynb - model with INSPIRED dataset without history
+- KGSF_colabload_inspiredhistory.ipynb - model with INSPIRED dataset with history
 
 # Notation
 The word embedding file **word2vec_inspired.npy** can be downloaded from the google drive https://drive.google.com/file/d/135_vUYLBBomTaqgtX6kmgCoQwvatQmEi/view?usp=sharing
