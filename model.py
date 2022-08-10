@@ -1,3 +1,21 @@
+########################################################################################################################################################################
+########################################################################################################################################################################
+#####                                                                                                                                                             ######
+#####                     This code is originally used by Zhou, Kun, Wayne Xin Zhao, Shuqing Bian, Yuanhang Zhou, Ji-Rong Wen, and Jingsong Y                     ######
+#####                     "Improving conversational recommender systems via knowledge graph based semantic fusion." In Proceedings of the 26th                    ######
+#####                      ACM SIGKDD International Conference on Knowledge Discovery & Data Mining, pp. 1006-1014. 2020.                                         ######                                            
+#####                                                                                                                                                             ######
+#####                                                                                                                                                             ######
+#####                              Some part of the code was taken from from Wang, Xiaolei, Kun Zhou, Ji-Rong Wen, and Wayne Xin Zhao.                            ######                                          
+#####                "Towards Unified Conversational Recommender Systems via Knowledge-Enhanced Prompt Learning." arXiv preprint arXiv:2206.09363 (2022).         ######
+#####                                                                                                                                                             ######
+#####                                                                                                                                                             ######
+#####                                                                                                                                                             ######
+#####                         It is modified further according to my need and used for this project. Cited and Acknowleged.                                       ######                             
+#####                                                                                                                                                             ######
+########################################################################################################################################################################
+########################################################################################################################################################################
+
 from models.transformer import TorchGeneratorModel,_build_encoder,_build_decoder,_build_encoder_mask, _build_encoder4kg, _build_decoder4kg
 from models.utils import _create_embeddings,_create_entity_embeddings
 from models.graph import SelfAttentionLayer,SelfAttentionLayer_batch
