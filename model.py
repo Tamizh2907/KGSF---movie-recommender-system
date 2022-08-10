@@ -65,7 +65,7 @@ def concept_edge_list4GCN():
         edges.add((entity0,entity1))
         edges.add((entity1,entity0))
     edge_set=[[co[0] for co in list(edges)],[co[1] for co in list(edges)]]
-    return torch.LongTensor(edge_set).cuda()
+    return torch.LongTensor(edge_set).cpu()
 
 class CrossModel(nn.Module):
     def __init__(self, opt, dictionary, is_finetune=False, padding_idx=0, start_idx=1, end_idx=2, longest_label=1):
@@ -157,7 +157,7 @@ class CrossModel(nn.Module):
         edge_list, self.n_relation = _edge_list(self.kg, opt['n_entity'], hop=2)
         edge_list = list(set(edge_list))
         print(len(edge_list), self.n_relation)
-        self.dbpedia_edge_sets=torch.LongTensor(edge_list).cuda()
+        self.dbpedia_edge_sets=torch.LongTensor(edge_list).cpu()
         self.db_edge_idx = self.dbpedia_edge_sets[:, :2].t()
         self.db_edge_type = self.dbpedia_edge_sets[:, 2]
 
@@ -171,8 +171,8 @@ class CrossModel(nn.Module):
         w2i=json.load(open('word2index_inspired.json', encoding='utf-8'))
         self.i2w={w2i[word]:word for word in w2i}
 
-        self.mask4key=torch.Tensor(np.load('mask4keyinspired2.npy')).cuda()
-        self.mask4movie=torch.Tensor(np.load('mask4movieinspired2.npy')).cuda()
+        self.mask4key=torch.Tensor(np.load('mask4keyinspired2.npy')).cpu()
+        self.mask4movie=torch.Tensor(np.load('mask4movieinspired2.npy')).cpu()
         self.mask4=self.mask4key+self.mask4movie
         if is_finetune:
             params = [self.dbpedia_RGCN.parameters(), self.concept_GCN.parameters(),
@@ -323,8 +323,8 @@ class CrossModel(nn.Module):
         con_scores = F.linear(db_emb, con_nodes_features, self.info_output_con.bias)
         db_scores = F.linear(con_emb, db_nodes_features, self.info_output_db.bias)
 
-        info_db_loss=torch.sum(self.info_db_loss(db_scores,db_label.cuda().float()),dim=-1)*mask.cuda()
-        info_con_loss=torch.sum(self.info_con_loss(con_scores,con_label.cuda().float()),dim=-1)*mask.cuda()
+        info_db_loss=torch.sum(self.info_db_loss(db_scores,db_label.cpu().float()),dim=-1)*mask.cpu()
+        info_con_loss=torch.sum(self.info_con_loss(con_scores,con_label.cpu().float()),dim=-1)*mask.cpu()
 
         return torch.mean(info_db_loss), torch.mean(info_con_loss)
 
@@ -382,7 +382,7 @@ class CrossModel(nn.Module):
         db_con_mask=[]
         for i, seed_set in enumerate(seed_sets):
             if seed_set == []:
-                user_representation_list.append(torch.zeros(self.dim).cuda())
+                user_representation_list.append(torch.zeros(self.dim).cpu())
                 db_con_mask.append(torch.zeros([1]))
                 continue
             user_representation = db_nodes_features[seed_set]  # torch can reflect
@@ -398,7 +398,7 @@ class CrossModel(nn.Module):
         con_emb_mask=concept_mask==self.concept_padding
 
         con_user_emb=graph_con_emb
-        con_user_emb,attention=self.self_attn(con_user_emb,con_emb_mask.cuda())
+        con_user_emb,attention=self.self_attn(con_user_emb,con_emb_mask.cpu())
         user_emb=self.user_norm(torch.cat([con_user_emb,db_user_emb],dim=-1))
         uc_gate = torch.sigmoid(self.gate_norm(user_emb))
         user_emb = uc_gate * db_user_emb + (1 - uc_gate) * con_user_emb
@@ -407,17 +407,17 @@ class CrossModel(nn.Module):
         #entity_scores=(scores_db+scores_con)/2
 
         #mask loss
-        #m_emb=db_nodes_features[labels.cuda()]
+        #m_emb=db_nodes_features[labels.cpu()]
         #mask_mask=concept_mask!=self.concept_padding
-        mask_loss=0#self.mask_predict_loss(m_emb, attention, xs, mask_mask.cuda(),rec.float())
+        mask_loss=0#self.mask_predict_loss(m_emb, attention, xs, mask_mask.cpu(),rec.float())
 
         info_db_loss, info_con_loss=self.infomax_loss(con_nodes_features,db_nodes_features,con_user_emb,db_user_emb,con_label,db_label,db_con_mask)
 
-        #entity_scores = F.softmax(entity_scores.cuda(), dim=-1).cuda()
+        #entity_scores = F.softmax(entity_scores.cpu(), dim=-1).cpu()
 
-        rec_loss=self.criterion(entity_scores.squeeze(1).squeeze(1).float(), labels.cuda())
-        #rec_loss=self.klloss(entity_scores.squeeze(1).squeeze(1).float(), labels.float().cuda())
-        rec_loss = torch.sum(rec_loss*rec.float().cuda())
+        rec_loss=self.criterion(entity_scores.squeeze(1).squeeze(1).float(), labels.cpu())
+        #rec_loss=self.klloss(entity_scores.squeeze(1).squeeze(1).float(), labels.float().cpu())
+        rec_loss = torch.sum(rec_loss*rec.float().cpu())
 
         self.user_rep=user_emb
 
@@ -425,14 +425,14 @@ class CrossModel(nn.Module):
         con_nodes_features4gen=con_nodes_features#self.concept_GCN4gen(con_nodes_features,self.concept_edge_sets)
         con_emb4gen = con_nodes_features4gen[concept_mask]
         con_mask4gen = concept_mask != self.concept_padding
-        #kg_encoding=self.kg_encoder(con_emb4gen.cuda(),con_mask4gen.cuda())
-        kg_encoding=(self.kg_norm(con_emb4gen),con_mask4gen.cuda())
+        #kg_encoding=self.kg_encoder(con_emb4gen.cpu(),con_mask4gen.cpu())
+        kg_encoding=(self.kg_norm(con_emb4gen),con_mask4gen.cpu())
 
         entity_vector = entity_vector.type(torch.int64)
         db_emb4gen=db_nodes_features[entity_vector] #batch*50*dim
         db_mask4gen=entity_vector!=0
-        #db_encoding=self.db_encoder(db_emb4gen.cuda(),db_mask4gen.cuda())
-        db_encoding=(self.db_norm(db_emb4gen),db_mask4gen.cuda())
+        #db_encoding=self.db_encoder(db_emb4gen.cpu(),db_mask4gen.cpu())
+        db_encoding=(self.db_norm(db_emb4gen),db_mask4gen.cpu())
 
         if test == False:
             # use teacher forcing
@@ -538,7 +538,7 @@ class CrossModel(nn.Module):
     def compute_loss(self, output, scores):
         score_view = scores.view(-1).type(torch.LongTensor)
         output_view = output.view(-1, output.size(-1))
-        loss = self.criterion(output_view.cuda(), score_view.cuda())
+        loss = self.criterion(output_view.cpu(), score_view.cpu())
         return loss
 
     def save_model(self):

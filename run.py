@@ -23,6 +23,24 @@ Examples
 # TODO List:
 # * More logging (e.g. to files), make things prettier.
 
+########################################################################################################################################################################
+########################################################################################################################################################################
+#####                                                                                                                                                             ######
+#####                     This code is originally used by Zhou, Kun, Wayne Xin Zhao, Shuqing Bian, Yuanhang Zhou, Ji-Rong Wen, and Jingsong Y                     ######
+#####                     "Improving conversational recommender systems via knowledge graph based semantic fusion." In Proceedings of the 26th                    ######
+#####                      ACM SIGKDD International Conference on Knowledge Discovery & Data Mining, pp. 1006-1014. 2020.                                         ######                                            
+#####                                                                                                                                                             ######
+#####                                                                                                                                                             ######
+#####                              Some part of the code was taken from from Wang, Xiaolei, Kun Zhou, Ji-Rong Wen, and Wayne Xin Zhao.                            ######                                          
+#####                "Towards Unified Conversational Recommender Systems via Knowledge-Enhanced Prompt Learning." arXiv preprint arXiv:2206.09363 (2022).         ######
+#####                                                                                                                                                             ######
+#####                                                                                                                                                             ######
+#####                                                                                                                                                             ######
+#####                         It is modified further according to my need and used for this project. Cited and Acknowleged.                                       ######                             
+#####                                                                                                                                                             ######
+########################################################################################################################################################################
+########################################################################################################################################################################
+
 import numpy as np
 from tqdm import tqdm
 from math import exp
@@ -55,11 +73,11 @@ def is_distributed():
 
 def setup_args():
     train = argparse.ArgumentParser()
-    train.add_argument("-max_c_length","--max_c_length",type=int,default=512)
-    train.add_argument("-max_r_length","--max_r_length",type=int,default=512)
+    train.add_argument("-max_c_length","--max_c_length",type=int,default=256)
+    train.add_argument("-max_r_length","--max_r_length",type=int,default=256)
     train.add_argument("-batch_size","--batch_size",type=int,default=32)
     train.add_argument("-max_count","--max_count",type=int,default=20)
-    train.add_argument("-use_cuda","--use_cuda",type=bool,default=True)
+    train.add_argument("-use_cpu","--use_cpu",type=bool,default=True)
     train.add_argument("-load_dict","--load_dict",type=str,default=None)
     train.add_argument("-learningrate","--learningrate",type=float,default=1e-3)
     train.add_argument("-optimizer","--optimizer",type=str,default='adam')
@@ -108,7 +126,7 @@ class TrainLoop_fusion_rec():
         self.batch_size=self.opt['batch_size']
         self.epoch=self.opt['epoch']
 
-        self.use_cuda=opt['use_cuda']
+        self.use_cpu=opt['use_cpu']
         if opt['load_dict']!=None:
             self.load_data=True
         else:
@@ -145,8 +163,8 @@ class TrainLoop_fusion_rec():
         self.model = CrossModel(self.opt, self.dict, is_finetune)
         if self.opt['embedding_type'] != 'random':
             pass
-        if self.use_cuda:
-            self.model.cuda()
+        if self.use_cpu:
+            self.model.cpu()
 
     def train(self):
         #self.model.load_model()
@@ -168,8 +186,8 @@ class TrainLoop_fusion_rec():
                 self.model.train()
                 self.zero_grad()
 
-                scores, preds, rec_scores, rec_loss, gen_loss, mask_loss, info_db_loss, _=self.model(context.cuda(), response.cuda(), mask_response.cuda(),
-                                                                                                                            concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cuda(), rec, test=False)
+                scores, preds, rec_scores, rec_loss, gen_loss, mask_loss, info_db_loss, _=self.model(context.cpu(), response.cpu(), mask_response.cpu(),
+                                                                                                                            concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cpu(), rec, test=False)
 
                 joint_loss=info_db_loss#+info_con_loss
 
@@ -200,7 +218,7 @@ class TrainLoop_fusion_rec():
                 self.model.train()
                 self.zero_grad()
 
-                scores, preds, rec_scores, rec_loss, gen_loss, mask_loss, info_db_loss, _=self.model(context.cuda(), response.cuda(), mask_response.cuda(), concept_mask, dbpedia_mask, seed_sets, movie,concept_vec, db_vec, entity_vector.cuda(), rec, test=False)
+                scores, preds, rec_scores, rec_loss, gen_loss, mask_loss, info_db_loss, _=self.model(context.cpu(), response.cpu(), mask_response.cpu(), concept_mask, dbpedia_mask, seed_sets, movie,concept_vec, db_vec, entity_vector.cpu(), rec, test=False)
 
                 joint_loss=rec_loss+0.025*info_db_loss#+0.0*info_con_loss#+mask_loss*0.05
 
@@ -237,7 +255,7 @@ class TrainLoop_fusion_rec():
         #print(labels[1].item())
         #print(self.movie_ids.index(labels[1].item()))
         self.metrics_rec["loss"] += rec_loss
-        outputs = scores.cuda()
+        outputs = scores.cpu()
         #print(outputs)
         outputs = outputs[:, torch.LongTensor(self.movie_ids)]
         #print(outputs)
@@ -285,9 +303,9 @@ class TrainLoop_fusion_rec():
                 for b in range(batch_size):
                     seed_set = entity[b].nonzero().view(-1).tolist()
                     seed_sets.append(seed_set)
-                scores, preds, rec_scores, rec_loss, _, mask_loss, info_db_loss, info_con_loss = self.model(context.cuda(), response.cuda(), mask_response.cuda(), concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cuda(), rec, test=True, maxlen=20, bsz=batch_size)
+                scores, preds, rec_scores, rec_loss, _, mask_loss, info_db_loss, info_con_loss = self.model(context.cpu(), response.cpu(), mask_response.cpu(), concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cpu(), rec, test=True, maxlen=20, bsz=batch_size)
 
-            recs.extend(rec.cuda())
+            recs.extend(rec.cpu())
             #print(losses)
             #exit()
             self.metrics_cal_rec(rec_loss, rec_scores, movie)
@@ -404,7 +422,7 @@ class TrainLoop_fusion_gen():
         self.batch_size=self.opt['batch_size']
         self.epoch=self.opt['epoch']
 
-        self.use_cuda=opt['use_cuda']
+        self.use_cpu=opt['use_cpu']
         if opt['load_dict']!=None:
             self.load_data=True
         else:
@@ -438,8 +456,8 @@ class TrainLoop_fusion_gen():
         self.model = CrossModel(self.opt, self.dict, is_finetune)
         if self.opt['embedding_type'] != 'random':
             pass
-        if self.use_cuda:
-            self.model.cuda()
+        if self.use_cpu:
+            self.model.cpu()
 
     def train(self):
         self.model.load_model()
@@ -461,7 +479,7 @@ class TrainLoop_fusion_gen():
                 self.model.train()
                 self.zero_grad()
 
-                scores, preds, rec_scores, rec_loss, gen_loss, mask_loss, info_db_loss, info_con_loss=self.model(context.cuda(), response.cuda(), mask_response.cuda(), concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cuda(), rec, test=False)
+                scores, preds, rec_scores, rec_loss, gen_loss, mask_loss, info_db_loss, info_con_loss=self.model(context.cpu(), response.cpu(), mask_response.cpu(), concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cpu(), rec, test=False)
 
                 joint_loss=gen_loss
 
@@ -507,13 +525,13 @@ class TrainLoop_fusion_gen():
                 for b in range(batch_size):
                     seed_set = entity[b].nonzero().view(-1).tolist()
                     seed_sets.append(seed_set)
-                _, _, _, _, gen_loss, mask_loss, info_db_loss, info_con_loss = self.model(context.cuda(), response.cuda(), mask_response.cuda(), concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cuda(), rec, test=False)
-                scores, preds, rec_scores, rec_loss, _, mask_loss, info_db_loss, info_con_loss = self.model(context.cuda(), response.cuda(), mask_response.cuda(), concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cuda(), rec, test=True, maxlen=20, bsz=batch_size)
+                _, _, _, _, gen_loss, mask_loss, info_db_loss, info_con_loss = self.model(context.cpu(), response.cpu(), mask_response.cpu(), concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cpu(), rec, test=False)
+                scores, preds, rec_scores, rec_loss, _, mask_loss, info_db_loss, info_con_loss = self.model(context.cpu(), response.cpu(), mask_response.cpu(), concept_mask, dbpedia_mask, seed_sets, movie, concept_vec, db_vec, entity_vector.cpu(), rec, test=True, maxlen=20, bsz=batch_size)
 
-            golden_sum.extend(self.vector2sentence(response.cuda()))
-            inference_sum.extend(self.vector2sentence(preds.cuda()))
-            context_sum.extend(self.vector2sentence(context.cuda()))
-            recs.extend(rec.cuda())
+            golden_sum.extend(self.vector2sentence(response.cpu()))
+            inference_sum.extend(self.vector2sentence(preds.cpu()))
+            context_sum.extend(self.vector2sentence(context.cpu()))
+            recs.extend(rec.cpu())
             losses.append(torch.mean(gen_loss))
             #print(losses)
             #exit()
@@ -538,11 +556,12 @@ class TrainLoop_fusion_gen():
         return output_dict_gen
 
     def metrics_cal_gen(self,rec_loss,preds,responses,recs):
+        from nltk.translate.bleu_score import SmoothingFunction
         def bleu_cal(sen1, tar1):
-            bleu1 = sentence_bleu([tar1], sen1, weights=(1, 0, 0, 0))
-            bleu2 = sentence_bleu([tar1], sen1, weights=(0, 1, 0, 0))
-            bleu3 = sentence_bleu([tar1], sen1, weights=(0, 0, 1, 0))
-            bleu4 = sentence_bleu([tar1], sen1, weights=(0, 0, 0, 1))
+            bleu1 = sentence_bleu([tar1], sen1, weights=(1, 0, 0, 0), smoothing_function=SmoothingFunction().method1)
+            bleu2 = sentence_bleu([tar1], sen1, weights=(0, 1, 0, 0), smoothing_function=SmoothingFunction().method1)
+            bleu3 = sentence_bleu([tar1], sen1, weights=(0, 0, 1, 0), smoothing_function=SmoothingFunction().method1)
+            bleu4 = sentence_bleu([tar1], sen1, weights=(0, 0, 0, 1), smoothing_function=SmoothingFunction().method1)
             return bleu1, bleu2, bleu3, bleu4
 
         def distinct_metrics(outs):

@@ -56,17 +56,25 @@ import gensim
 
 
 #entity2entityId=pkl.load(open('data/entity2entityId.pkl','rb'))
-##print(dict(list(entity2entityId.items())[0:2]))
+#print(dict(list(entity2entityId.items())[0:2]))
+#print(len(entity2entityId))
+
+#entity2entityId=pkl.load(open('inspired/kg.pkl','rb'))
+#print(dict(list(entity2entityId.items())[0:2]))
 #print(len(entity2entityId))
 
 
-#text_dict=pkl.load(open('data/movie_ids.pkl','rb'))
+#text_dict=pkl.load(open('data/text_dict.pkl','rb'))
 ##print(len(text_dict))
 ##print(type(text_dict))
-#print(text_dict[:20])
+##print(text_dict[:2])
+#print(dict(list(text_dict.items())[0:20]))
 
-##id2entityId=pkl.load(open('data/id2entity.pkl','rb'))
-##print(dict(list(id2entityId.items())[0:2]))
+#id2entityId=pkl.load(open('data/id2entity.pkl','rb'))
+#print(dict(list(id2entityId.items())[0:2]))
+
+#id2entityId=pkl.load(open('inspired/relation2id.pkl','rb'))
+#print(dict(list(id2entityId.items())[0:2]))
 
 #import random
 #listing = list(range(0,17178))
@@ -82,8 +90,8 @@ import gensim
 ### close the file
 #file.close()
 
-listing = pkl.load(open('movie_ids_new.pkl','rb'))
-print(listing[:2])
+#listing = pkl.load(open('movie_ids_new.pkl','rb'))
+#print(listing[:2])
 #rec_list=[]
 
 #with open('train_data_processed.jsonl', 'r', encoding='utf-8') as f:
