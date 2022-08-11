@@ -2,6 +2,19 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+########################################################################################################################################################################
+########################################################################################################################################################################
+#####                                                                                                                                                             ######
+#####                     This code is originally used by Zhou, Kun, Wayne Xin Zhao, Shuqing Bian, Yuanhang Zhou, Ji-Rong Wen, and Jingsong Y                     ######
+#####                     "Improving conversational recommender systems via knowledge graph based semantic fusion." In Proceedings of the 26th                    ######
+#####                      ACM SIGKDD International Conference on Knowledge Discovery & Data Mining, pp. 1006-1014. 2020.                                         ######                                                                                                                                                                                                        ######
+#####                                                                                                                                                             ######
+#####                                                                                                                                                             ######
+#####                         It is modified further according to my need and used for this project. Cited and Acknowleged.                                       ######                             
+#####                                                                                                                                                             ######
+########################################################################################################################################################################
+########################################################################################################################################################################
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
