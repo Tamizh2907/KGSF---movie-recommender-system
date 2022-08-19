@@ -1,0 +1,249 @@
+commit 84333d1542602ba5a2bf81470d3209a07aefc7c0
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Thu Aug 11 17:06:49 2022 +0100
+
+    Update
+
+commit 65086b7199615730d944fca3de93f5c278673809
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Thu Aug 11 17:01:17 2022 +0100
+
+    Update
+
+commit 74dd9a895de59108092b59d3f73cc58099498723
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Thu Aug 11 16:59:45 2022 +0100
+
+    Update
+
+commit 11358c7087d80ecb816d56060b3bd1606ed2d620
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Thu Aug 11 16:58:38 2022 +0100
+
+    Update
+
+commit 8fe8d857cad9775d783e319d44cfd6b7d48184ee
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Thu Aug 11 16:56:17 2022 +0100
+
+    Update readme
+
+commit b38a97cf0ac8562101df73c26c39d0fb3d61cea7
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Thu Aug 11 00:15:00 2022 +0100
+
+    Citation update
+
+commit 1975357c137d05cd96f2f21bc0463ee1d9b54acc
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Thu Aug 11 00:04:16 2022 +0100
+
+    Citation
+
+commit 1cecf8849cb3175f565a58666c830553c0420afc
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Wed Aug 10 23:51:23 2022 +0100
+
+    update
+
+commit f077b204d84e65da0505bf5e7e92e644c72c187d
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Wed Aug 10 23:50:13 2022 +0100
+
+    Update
+
+commit 9143f50b1c517706b3d531fe629f0d85a82af8da
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Wed Aug 10 23:48:27 2022 +0100
+
+    Update
+
+commit 562523f759a7e18cf3ddb4acb7cba72bcbb06d93
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Wed Aug 10 23:39:03 2022 +0100
+
+    Update
+
+commit ff976717044212044d9eea88f62cdc541de38183
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Wed Aug 10 23:38:26 2022 +0100
+
+    Readme
+
+commit b7c6a16b905960b27f5249015a04bd758824aaee
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Wed Aug 10 23:37:31 2022 +0100
+
+    Update
+
+commit da1eeedcd0acb4f57bc12b28fda6abd2542fb572
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Wed Aug 10 23:36:27 2022 +0100
+
+    Update
+
+commit 5a1155d638af5bcc564e569c5382958b84bf7661
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Wed Aug 10 23:34:54 2022 +0100
+
+    Update files
+
+commit 2df3eb5bbebdd2dd8922c6d2fba182def5010df2
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Wed Aug 10 23:19:51 2022 +0100
+
+    Update values
+
+commit caba174e02158f3643fce6dc412685fc439fda29
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Mon Aug 1 15:09:43 2022 +0100
+
+    cpu to cuda
+
+commit f16442aec85c0111e848a08f094c1b3ec2f88bba
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Tue Jul 26 13:55:25 2022 +0100
+
+    Update with more books
+
+commit 50c98ecb41c975a44fcd85f4c12728a3531a4bc5
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Sat Jul 23 22:37:30 2022 +0100
+
+    DialoGPT
+
+commit dafad1b4c3c26c362aae3f1c1005b69f393844d8
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Fri Jul 8 00:17:23 2022 +0100
+
+    One trial run completed
+
+commit d2c21600837a2ecb6ef8676bb9a99632c7536c5f
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Wed Jul 6 10:33:30 2022 +0100
+
+    Dataset merged and checked
+
+commit eb40fcacc2dccd72cc7e7d5f179a2881226104d7
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Mon Jul 4 23:07:36 2022 +0100
+
+    Dataset preparation
+
+commit e2060f9f147da1b5e3d0f9b3abee9f2b9cb13945
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Mon Jul 4 22:02:16 2022 +0100
+
+    Refactoring the first
+
+commit 3ea44ecdbf109c226e6f581ed05cea010f70d310
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Mon Jul 4 03:01:17 2022 +0100
+
+    Major update
+
+commit c1da0ecb2a7314731a40560735b436e1a3f940dc
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Wed Jun 29 14:02:24 2022 +0100
+
+    Push up
+
+commit 08358a4df503933094cbfa459d19e432d33325c4
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Wed Jun 22 18:23:54 2022 +0100
+
+    Updated CUDA version
+
+commit a3e084889a60f2a046f26ee8562d571be3bfc4b7
+Author: Thamizhiniyan Pugazhenthi <thamizhiniyan2907@gmail.com>
+Date:   Thu May 19 17:22:51 2022 +0100
+
+    Running condition
+
+commit d4f783a0b386ebb6beb74506f0e3de4d509c996e
+Author: Lancelot39 <1046946079@QQ.com>
+Date:   Mon Nov 16 16:25:28 2020 +0800
+
+    Update README.md
+
+commit 5b41eba6f06bc837627990031ad02d9a56b6dd71
+Merge: 4e9fdf6 3d8d246
+Author: Lancelot39 <1046946079@QQ.com>
+Date:   Mon Nov 16 16:24:45 2020 +0800
+
+    Merge pull request #2 from Lancelot39/master
+    
+    Add more description
+
+commit 3d8d246519c639536f06675b10dd13b941af81cb
+Author: Lancelot39 <1046946079@QQ.com>
+Date:   Mon Nov 16 15:50:29 2020 +0800
+
+    Update README.md
+
+commit dd6b06f9124abe4e0118329a1fb6742a56387aa7
+Author: Lancelot39 <1046946079@QQ.com>
+Date:   Mon Nov 16 15:48:25 2020 +0800
+
+    Update README.md
+
+commit 8733a3fd1aae97d705543f97259a3260fb2a0161
+Author: Lancelot39 <1046946079@QQ.com>
+Date:   Mon Nov 16 15:46:57 2020 +0800
+
+    Update README.md
+
+commit de35e95944531b49791e82091e4358685411ea2f
+Author: Lancelot39 <1046946079@QQ.com>
+Date:   Mon Nov 16 15:40:07 2020 +0800
+
+    Add files via upload
+
+commit 4e9fdf610c8b9145aad8e30019ca3a5ffddada35
+Merge: 39df80a 52989e0
+Author: Lancelot39 <1046946079@QQ.com>
+Date:   Sat Aug 22 12:16:54 2020 +0800
+
+    Merge pull request #1 from Lancelot39/master
+    
+    Update
+
+commit 52989e0dba0ee9ba829caf6fb5c07da48ee17472
+Author: Lancelot39 <1046946079@QQ.com>
+Date:   Sat Aug 22 12:07:06 2020 +0800
+
+    Update run.py
+    
+    Remove some of useless lines to simplify the code
+
+commit d71def0681bf6b9d5a4af4d27ce772263d366a80
+Author: Lancelot39 <1046946079@QQ.com>
+Date:   Sat Aug 22 12:05:34 2020 +0800
+
+    Update README.md
+    
+    Add some of notations
+
+commit a8eebe94dcf9fe427e2639ae1cd378572457dd31
+Author: Lancelot39 <1046946079@QQ.com>
+Date:   Sat Aug 22 01:36:49 2020 +0800
+
+    Update README.md
+
+commit 527716ca8d5e8bc965834a8f951acbd11dfd1bae
+Author: Lancelot39 <1046946079@QQ.com>
+Date:   Sat Aug 22 01:10:25 2020 +0800
+
+    Add files via upload
+
+commit 39df80a9c11dbcc6f72fa5b13b4790064f3458c0
+Author: Lancelot39 <1046946079@QQ.com>
+Date:   Sun Jun 14 20:07:43 2020 +0800
+
+    Update README.md
+
+commit 4cba8db61d2f599a1dce667c166b54f4f52cf0a3
+Author: Lancelot39 <1046946079@QQ.com>
+Date:   Tue May 26 16:19:49 2020 +0800
+
+    Initial commit
