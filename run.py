@@ -156,7 +156,7 @@ class TrainLoop_fusion_rec():
             train_set=CRSdataset(self.train_dataset.data_process(),self.opt['n_entity'],self.opt['n_concept'])
             train_dataset_loader = torch.utils.data.DataLoader(dataset=train_set,
                                                             batch_size=self.batch_size,
-                                                            shuffle=False)
+                                                            shuffle=True)
             num=0
             for context,c_lengths,response,r_length,mask_response,mask_r_length,entity,entity_vector,movie,concept_mask,dbpedia_mask,concept_vec, db_vec,rec in tqdm(train_dataset_loader):
                 seed_sets = []
@@ -188,7 +188,7 @@ class TrainLoop_fusion_rec():
             train_set=CRSdataset(self.train_dataset.data_process(),self.opt['n_entity'],self.opt['n_concept'])
             train_dataset_loader = torch.utils.data.DataLoader(dataset=train_set,
                                                             batch_size=self.batch_size,
-                                                            shuffle=False)
+                                                            shuffle=True)
             num=0
             for context,c_lengths,response,r_length,mask_response,mask_r_length,entity,entity_vector,movie,concept_mask,dbpedia_mask,concept_vec, db_vec,rec in tqdm(train_dataset_loader):
                 seed_sets = []
@@ -273,7 +273,7 @@ class TrainLoop_fusion_rec():
         val_set=CRSdataset(self.val_dataset.data_process(),self.opt['n_entity'],self.opt['n_concept'])
         val_dataset_loader = torch.utils.data.DataLoader(dataset=val_set,
                                                            batch_size=self.batch_size,
-                                                           shuffle=False)
+                                                           shuffle=True)
         recs=[]
         for context, c_lengths, response, r_length, mask_response, mask_r_length, entity, entity_vector, movie, concept_mask, dbpedia_mask, concept_vec, db_vec, rec in tqdm(val_dataset_loader):
             #print(movie)
@@ -449,7 +449,7 @@ class TrainLoop_fusion_gen():
             train_set=CRSdataset(self.train_dataset.data_process(True),self.opt['n_entity'],self.opt['n_concept'])
             train_dataset_loader = torch.utils.data.DataLoader(dataset=train_set,
                                                             batch_size=self.batch_size,
-                                                            shuffle=False)
+                                                            shuffle=True)
             num=0
             for context,c_lengths,response,r_length,mask_response,mask_r_length,entity,entity_vector,movie,concept_mask,dbpedia_mask,concept_vec, db_vec,rec in tqdm(train_dataset_loader):
                 seed_sets = []
@@ -493,7 +493,7 @@ class TrainLoop_fusion_gen():
         val_set=CRSdataset(val_dataset.data_process(True),self.opt['n_entity'],self.opt['n_concept'])
         val_dataset_loader = torch.utils.data.DataLoader(dataset=val_set,
                                                            batch_size=self.batch_size,
-                                                           shuffle=False)
+                                                           shuffle=True)
         inference_sum=[]
         golden_sum=[]
         context_sum=[]
